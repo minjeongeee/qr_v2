@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Camera with Resizable Items</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        #video {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 1;
+        }
+        #capture-button {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2;
+            width: 60px;
+            height: 60px;
+            background: url('camera.png') no-repeat center center;
+            background-size: contain;
+            border: none;
+            cursor: pointer;
+        }
+        #overlay-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 120px;
+            overflow-x: auto;
+            overflow-y: hidden;
+            white-space: nowrap;
+            background-color: rgba(255, 255, 255, 0.5);
+            z-index: 2;
+            padding: 10px 0;
+        }
+        .overlay-image {
+            display: inline-block;
+            margin: 0 10px;
+            cursor: pointer;
+            touch-action: none;
+            height: 100px;
+            width: auto;
+        }
+        .draggable {
+            position: absolute;
+            touch-action: none;
+            z-index: 10;
+        }
+        #preview-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 2;
+            width: 100px;
+            height: 100px;
+            display: none;
+        }
+        #preview-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            cursor: pointer;
+        }
+        #fullsize-image {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 3;
+        }
+        #fullsize-image img {
+            max-width: 90%;
+            max-height: 90%;
+            cursor: pointer;
+        }
+        #sphere {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 60px;
+            height: 60px;
+            z-index: 2;
+        }
+    </style>
+</head>
+<body>
+
+    <video id="video" autoplay playsinline></video>
+
+    <div id="overlay-container">
+        <img id="joy" class="overlay-image" src="joy.png" alt="joy Overlay">
+        <img id="sad" class="overlay-image" src="sad.png" alt="sad Overlay">
+        <img id="disgust" class="overlay-image" src="disgust.png" alt="disgust Overlay">
+        <img id="anger" class="overlay-image" src="anger.png" alt="anger Overlay">
+        <img id="fear" class="overlay-image" src="fear.png" alt="fear Overlay">
+        <img id="envy" class="overlay-image" src="envy.png" alt="envy Overlay">
+        <img id="ansiety" class="overlay-image" src="ansiety.png" alt="ansiety Overlay">
+        <img id="ennui" class="overlay-image" src="ennui.png" alt="ennui Overlay">
+        <img id="ambarrassment" class="overlay-image" src="ambarrassment.png" alt="ambarrassment Overlay">
+    </div>
+
+    <button id="capture-button"></button>
+
+    <img id="sphere" src="sphere.png" alt="Sphere">
+
+    <div id="preview-container">
+        <img id="preview-image" alt="Preview">
+    </div>
+
+    <div id="fullsize-image">
+        <img id="fullsize-image-img" alt="Full Size">
+    </div>
+
+    <canvas id="canvas" style="display: none;"></canvas>
+
+    <script>
+        let currentStream = null;
+
+        window.onload = function() {
+            startCamera();
+            initItemEvents();
+        };
+
+        function startCamera() {
+            const constraints = {
+                video: {
+                    facingMode: "environment",
+                    width: { ideal: 1920 },
+                    height: { ideal: 1080 }
+                }
+            };
+
+            navigator.mediaDevices.getUserMedia(constraints)
+                .then(function(stream) {
+                    currentStream = stream;
+                    const video = document.getElementById('video');
+                    video.srcObject = stream;
+                    video.onloadedmetadata = function() {
+                        video.play();
+                    };
+                })
+                .catch(function(err) {
+                    console.error("Error: " + err);
+                    alert("Could not access the camera. Please check your permissions.");
+                });
+        }
+
+        function initItemEvents() {
+            document.querySelectorAll('.overlay-image').forEach((img) => {
+                img.addEventListener('click', function(e) {
+                    createCentralItem(e.target.src);
+                });
+            });
+        }
+
+        function createCentralItem(src) {
+            const newImage = document.createElement('img');
+            newImage.src = src;
+            newImage.className = 'draggable';
+            newImage.style.width = '100px';
+            newImage.style.height = '100px';
+
+            const x = (window.innerWidth - 100) / 2;
+            const y = (window.innerHeight - 100) / 2;
+            newImage.style.left = `${x}px`;
+            newImage.style.top = `${y}px`;
+
+            document.body.appendChild(newImage);
+
+            initDraggable(newImage);
+        }
+
+        function initDraggable(element) {
+            let posX = 0, posY = 0;
+
+            element.addEventListener('touchstart', function(e) {
+                if (e.touches.length === 1) {
+                    const touch = e.touches[0];
+                    posX = touch.clientX;
+                    posY = touch.clientY;
+
+                    element.style.zIndex = 11; // Bring element to the front
+                    document.addEventListener('touchmove', onTouchMove);
+                    document.addEventListener('touchend', onTouchEnd);
+                } else if (e.touches.length === 2) {
+                    pinchToZoom(element, e);
+                }
+            });
+
+            function onTouchMove(e) {
+                if (e.touches.length === 1) {
+                    const touch = e.touches[0];
+                    const dx = touch.clientX - posX;
+                    const dy = touch.clientY - posY;
+
+                    posX = touch.clientX;
+                    posY = touch.clientY;
+
+                    element.style.left = (element.offsetLeft + dx) + 'px';
+                    element.style.top = (element.offsetTop + dy) + 'px';
+
+                    checkOverlap(element);
+                }
+            }
+
+            function onTouchEnd() {
+                document.removeEventListener('touchmove', onTouchMove);
+                document.removeEventListener('touchend', onTouchEnd);
+            }
+        }
+
+        function pinchToZoom(element, e) {
+            e.preventDefault();
+
+            let initialDistance = null;
+            let initialWidth = element.clientWidth;
+            let initialHeight = element.clientHeight;
+
+            function calculateDistance(e) {
+                const distX = e.touches[0].clientX - e.touches[1].clientX;
+                const distY = e.touches[0].clientY - e.touches[1].clientY;
+                return Math.sqrt(distX * distX + distY * distY);
+            }
+
+            if (initialDistance === null) {
+                initialDistance = calculateDistance(e);
+            } else {
+                const currentDistance = calculateDistance(e);
+                const scale = currentDistance / initialDistance;
+                element.style.width = initialWidth * scale + 'px';
+                element.style.height = initialHeight * scale + 'px';
+            }
+
+            function onPinchMove(e) {
+                if (e.touches.length === 2) {
+                    const currentDistance = calculateDistance(e);
+                    const scale = currentDistance / initialDistance;
+                    element.style.width = initialWidth * scale + 'px';
+                    element.style.height = initialHeight * scale + 'px';
+                }
+            }
+
+            function onPinchEnd() {
+                document.removeEventListener('touchmove', onPinchMove);
+                document.removeEventListener('touchend', onPinchEnd);
+                initialDistance = null;
+            }
+
+            document.addEventListener('touchmove', onPinchMove);
+            document.addEventListener('touchend', onPinchEnd);
+        }
+
+        function checkOverlap(element) {
+            const sphere = document.getElementById('sphere');
+            const sphereRect = sphere.getBoundingClientRect();
+            const elementRect = element.getBoundingClientRect();
+
+            if (elementRect.left < sphereRect.right &&
+                elementRect.right > sphereRect.left &&
+                elementRect.top < sphereRect.bottom &&
+                elementRect.bottom > sphereRect.top) {
+                element.remove(); // Remove the element if it overlaps with the sphere
+            }
+        }
+
+        document.getElementById('capture-button').addEventListener('click', function() {
+            captureScreenshot();
+        });
+
+        function captureScreenshot() {
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            document.querySelectorAll('.draggable').forEach((img) => {
+                const imgWidth = img.clientWidth;
+                const imgHeight = img.clientHeight;
+                const imgX = img.offsetLeft;
+                const imgY = img.offsetTop;
+                ctx.drawImage(img, imgX, imgY, imgWidth, imgHeight);
+            });
+
+            const dataUrl = canvas.toDataURL('image/png');
+            showPreview(dataUrl);
+        }
+
+        function showPreview(dataUrl) {
+            const previewContainer = document.getElementById('preview-container');
+            const previewImage = document.getElementById('preview-image');
+            previewImage.src = dataUrl;
+            previewContainer.style.display = 'block';
+            previewImage.onclick = () => showFullSize(dataUrl);
+        }
+
+        function showFullSize(dataUrl) {
+            const fullSizeContainer = document.getElementById('fullsize-image');
+            const fullSizeImage = document.getElementById('fullsize-image-img');
+            fullSizeImage.src = dataUrl;
+            fullSizeContainer.style.display = 'flex';
+            fullSizeImage.onclick = () => fullSizeContainer.style.display = 'none';
+        }
+    </script>
+</body>
+</html>
