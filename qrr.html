@@ -311,6 +311,16 @@
 
         document.getElementById('capture-button').addEventListener('click', captureScreenshot);
 
+
+        function drawRotatedImage(ctx, img, x, y, width, height, rotation) {
+            ctx.save(); // 현재 상태 저장
+            ctx.translate(x + width / 2, y + height / 2); // 회전 중심으로 이동
+            ctx.rotate(rotation * Math.PI / 180); // 회전
+            ctx.drawImage(img, -width / 2, -height / 2, width, height); // 이미지 그리기
+            ctx.restore(); // 상태 복원
+        }
+
+
         function captureScreenshot() {
             const video = document.getElementById('video');
             const canvas = document.getElementById('canvas');
@@ -333,7 +343,9 @@
                 const imgX = img.offsetLeft * scaleX;
                 const imgY = img.offsetTop * scaleY;
 
-                ctx.drawImage(img, imgX, imgY, imgWidth, imgHeight);
+                const rotation = parseFloat(getComputedStyle(img).transform.split('rotate(')[1]?.split('deg')[0] || '0');
+
+                drawRotatedImage(ctx, img, imgX, imgY, imgWidth, imgHeight, rotation);
             });
 
             const dataUrl = canvas.toDataURL('image/png');
