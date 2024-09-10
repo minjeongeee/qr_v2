@@ -327,27 +327,18 @@
             const scaleY = canvas.height / window.innerHeight;
 
             document.querySelectorAll('.draggable').forEach((img) => {
+                // 화면의 실제 위치와 크기를 비디오의 실제 해상도에 맞춰 계산
                 const imgWidth = img.clientWidth * scaleX;
                 const imgHeight = img.clientHeight * scaleY;
                 const imgX = img.offsetLeft * scaleX;
                 const imgY = img.offsetTop * scaleY;
-                const imgRotation = parseFloat(img.style.transform.replace('rotate(', '').replace('deg)', '')) || 0;
 
-                // 회전 중심점 계산
-                const centerX = imgWidth / 2;
-                const centerY = imgHeight / 2;
-
-                ctx.save();
-                ctx.translate(imgX + centerX, imgY + centerY); // 회전 중심점으로 이동
-                ctx.rotate(imgRotation * Math.PI / 180); // 회전 적용
-                ctx.translate(-centerX, -centerY); // 원래 위치로 이동
-                ctx.drawImage(img, -centerX, -centerY, imgWidth, imgHeight);
-                tx.restore();
+                ctx.drawImage(img, imgX, imgY, imgWidth, imgHeight);
             });
 
             const dataUrl = canvas.toDataURL('image/png');
             showPreview(dataUrl);
-         }
+        }
 
         function showPreview(dataUrl) {
             const previewImage = document.getElementById('preview-image');
@@ -375,3 +366,4 @@
     </script>
 </body>
 </html>
+
