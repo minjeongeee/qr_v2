@@ -10,7 +10,7 @@
             padding: 0;
             overflow: hidden;
         }
-        #gif-intro {
+        #gif-intro_V2 {
             position: fixed;
             top: 0;
             left: 0;
@@ -116,7 +116,7 @@
 <body>
 
     <!-- GIF Intro -->
-    <img id="gif-intro" src="intro.gif" alt="Intro GIF">
+    <img id="gif-intro_V2" src="intro_V2.gif" alt="Intro_V2 GIF">
 
     <video id="video" autoplay playsinline></video>
 
@@ -148,15 +148,14 @@
 
     <script>
         window.onload = function() {
-            const gifIntro = document.getElementById('gif-intro');
+            const gifIntro = document.getElementById('gif-intro_V2');
 
-            gifIntro.addEventListener('load', function() {
-                setTimeout(function() {
-                    gifIntro.style.display = 'none';
-                    startCamera();
-                    showInterface();
-                }, gifIntro.duration * 1000 || 5000); // GIF 시간에 맞게 조정
-            });
+            // 13초 후 GIF 숨기기 및 카메라 시작
+            setTimeout(function() {
+                gifIntro.style.display = 'none';  // GIF 숨기기
+                startCamera();  // 카메라 허용 팝업 표시 및 시작
+                showInterface();  // 나머지 인터페이스 표시
+            }, 12000);  // 13초 후 실행
         };
 
         function startCamera() {
