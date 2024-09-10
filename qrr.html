@@ -187,90 +187,85 @@
             initDraggable(newImage);
         }
 
-	function initDraggable(element) {
-    	let posX = 0, posY = 0;
+        function initDraggable(element) {
+            let posX = 0, posY = 0;
 
-    	element.addEventListener('touchstart', function(e) {
-       	 e.preventDefault();  // 기본 터치 동작 방지
-      	  if (e.touches.length === 1) {
-      	      const touch = e.touches[0];
-        	    posX = touch.clientX;
-       	     posY = touch.clientY;
+            element.addEventListener('touchstart', function(e) {
+                if (e.touches.length === 1) {
+                    const touch = e.touches[0];
+                    posX = touch.clientX;
+                    posY = touch.clientY;
 
-    	        element.style.zIndex = 11; // Bring element to the front
-   	         document.addEventListener('touchmove', onTouchMove);
-    	        document.addEventListener('touchend', onTouchEnd);
-   	     } else if (e.touches.length === 2) {
-  	          pinchToZoom(element, e);
-  	      }
- 	   });
+                    element.style.zIndex = 11; // Bring element to the front
+                    document.addEventListener('touchmove', onTouchMove);
+                    document.addEventListener('touchend', onTouchEnd);
+                } else if (e.touches.length === 2) {
+                    pinchToZoom(element, e);
+                }
+            });
 
- 	   function onTouchMove(e) {
-   	     e.preventDefault();  // 기본 터치 동작 방지
-  	      if (e.touches.length === 1) {
-            	const touch = e.touches[0];
-            	const dx = touch.clientX - posX;
-       	   	 const dy = touch.clientY - posY;
+            function onTouchMove(e) {
+                if (e.touches.length === 1) {
+                    const touch = e.touches[0];
+                    const dx = touch.clientX - posX;
+                    const dy = touch.clientY - posY;
 
-	            posX = touch.clientX;
-	            posY = touch.clientY;
+                    posX = touch.clientX;
+                    posY = touch.clientY;
 
-	            element.style.left = (element.offsetLeft + dx) + 'px';
-	            element.style.top = (element.offsetTop + dy) + 'px';
+                    element.style.left = (element.offsetLeft + dx) + 'px';
+                    element.style.top = (element.offsetTop + dy) + 'px';
 
-	            checkOverlap(element);
-	        }
-	    }
+                    checkOverlap(element);
+                }
+            }
 
-	    function onTouchEnd(e) {
-	        e.preventDefault();  // 기본 터치 동작 방지
-	        document.removeEventListener('touchmove', onTouchMove);
-	        document.removeEventListener('touchend', onTouchEnd);
-	    }
-	}
+            function onTouchEnd() {
+                document.removeEventListener('touchmove', onTouchMove);
+                document.removeEventListener('touchend', onTouchEnd);
+            }
+        }
 
-	function pinchToZoom(element, e) {
-	    e.preventDefault(); // 기본 터치 동작 방지
-	
-	    let initialDistance = null;
-	    let initialWidth = element.clientWidth;
-	    let initialHeight = element.clientHeight;
+        function pinchToZoom(element, e) {
+            e.preventDefault();
 
-	    function calculateDistance(e) {
-	        const distX = e.touches[0].clientX - e.touches[1].clientX;
-	        const distY = e.touches[0].clientY - e.touches[1].clientY;
-	        return Math.sqrt(distX * distX + distY * distY);
-	    }
+            let initialDistance = null;
+            let initialWidth = element.clientWidth;
+            let initialHeight = element.clientHeight;
 
-	    if (initialDistance === null) {
-	        initialDistance = calculateDistance(e);
-	    } else {
-	        const currentDistance = calculateDistance(e);
-	        const scale = currentDistance / initialDistance;
-	        element.style.width = initialWidth * scale + 'px';
-	        element.style.height = initialHeight * scale + 'px';
-	    }
+            function calculateDistance(e) {
+                const distX = e.touches[0].clientX - e.touches[1].clientX;
+                const distY = e.touches[0].clientY - e.touches[1].clientY;
+                return Math.sqrt(distX * distX + distY * distY);
+            }
 
-	    function onPinchMove(e) {
-	        e.preventDefault(); // 기본 터치 동작 방지
-	        if (e.touches.length === 2) {
-	            const currentDistance = calculateDistance(e);
-	            const scale = currentDistance / initialDistance;
-	            element.style.width = initialWidth * scale + 'px';
-	            element.style.height = initialHeight * scale + 'px';
-	        }
-	    }
+            if (initialDistance === null) {
+                initialDistance = calculateDistance(e);
+            } else {
+                const currentDistance = calculateDistance(e);
+                const scale = currentDistance / initialDistance;
+                element.style.width = initialWidth * scale + 'px';
+                element.style.height = initialHeight * scale + 'px';
+            }
 
-	    function onPinchEnd(e) {
-	        e.preventDefault(); // 기본 터치 동작 방지
-	        document.removeEventListener('touchmove', onPinchMove);
-	        document.removeEventListener('touchend', onPinchEnd);
-	        initialDistance = null;
-	    }
+            function onPinchMove(e) {
+                if (e.touches.length === 2) {
+                    const currentDistance = calculateDistance(e);
+                    const scale = currentDistance / initialDistance;
+                    element.style.width = initialWidth * scale + 'px';
+                    element.style.height = initialHeight * scale + 'px';
+                }
+            }
 
-	    document.addEventListener('touchmove', onPinchMove);
-	    document.addEventListener('touchend', onPinchEnd);
-	}
+            function onPinchEnd() {
+                document.removeEventListener('touchmove', onPinchMove);
+                document.removeEventListener('touchend', onPinchEnd);
+                initialDistance = null;
+            }
+
+            document.addEventListener('touchmove', onPinchMove);
+            document.addEventListener('touchend', onPinchEnd);
+        }
 
         function checkOverlap(element) {
             const sphere = document.getElementById('sphere');
@@ -299,7 +294,6 @@
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
 
-            // 비디오를 캔버스에 그림
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
             // 화면 비율 계산
@@ -313,11 +307,9 @@
                 const imgX = img.offsetLeft * scaleX;
                 const imgY = img.offsetTop * scaleY;
 
-                // 이미지 요소를 캔버스에 그림
                 ctx.drawImage(img, imgX, imgY, imgWidth, imgHeight);
             });
 
-            // 결과 이미지를 데이터 URL로 생성
             const dataUrl = canvas.toDataURL('image/png');
             showPreview(dataUrl);
         }
