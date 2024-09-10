@@ -190,6 +190,8 @@
                 newImage.style.left = `${x}px`;
                 newImage.style.top = `${y}px`;
 
+                newImage.dataset.rotation = 0; // 회전 데이터 초기화
+
                 document.body.appendChild(newImage);
                 initDraggable(newImage);
             };
@@ -268,6 +270,7 @@
                 element.style.width = initialWidth * scale + 'px';
                 element.style.height = initialHeight * scale + 'px';
                 element.style.transform = `rotate(${rotation}deg)`;
+                element.dataset.rotation = parseFloat(element.dataset.rotation) + rotation;
             }
 
             function onPinchMove(e) {
@@ -279,7 +282,7 @@
 
                     element.style.width = initialWidth * scale + 'px';
                     element.style.height = initialHeight * scale + 'px';
-                    element.style.transform = `rotate(${rotation}deg)`;
+                    element.style.transform = `rotate(${parseFloat(element.dataset.rotation) + rotation}deg)`;
                 }
             }
 
@@ -332,8 +335,18 @@
                 const imgHeight = img.clientHeight * scaleY;
                 const imgX = img.offsetLeft * scaleX;
                 const imgY = img.offsetTop * scaleY;
+                const imgRotation = parseFloat(img.dataset.rotation) || 0;
 
-                ctx.drawImage(img, imgX, imgY, imgWidth, imgHeight);
+                // 회전 중심점 계산
+                const centerX = imgWidth / 2;
+                const centerY = imgHeight / 2;
+
+                ctx.save();
+                ctx.translate(imgX + centerX, imgY + centerY); // 회전 중심점으로 이동
+                ctx.rotate(imgRotation * Math.PI / 180); // 회전 적용
+                ctx.translate(-(imgX + centerX), -(imgY + centerY)); // 원래 위치로 이동
+                ctx.drawImage(img, 0, 0, imgWidth, imgHeight);
+                ctx.restore();
             });
 
             const dataUrl = canvas.toDataURL('image/png');
