@@ -176,22 +176,22 @@
             newImage.className = 'draggable';
 
             newImage.onload = function () {
-	        const aspectRatio = newImage.naturalWidth / newImage.naturalHeight; // 이미지의 원본 비율
-	        const initialWidth = 100; // 원하는 초기 너비 (100px)
-	        const initialHeight = initialWidth / aspectRatio; // 원본 비율에 따른 높이 계산
+                const aspectRatio = newImage.naturalWidth / newImage.naturalHeight; // 이미지의 원본 비율
+                const initialWidth = 100; // 원하는 초기 너비 (100px)
+                const initialHeight = initialWidth / aspectRatio; // 원본 비율에 따른 높이 계산
 
-	        newImage.style.width = initialWidth + 'px';
-	        newImage.style.height = initialHeight + 'px';
+                newImage.style.width = initialWidth + 'px';
+                newImage.style.height = initialHeight + 'px';
 
-	        // 화면 중앙에 위치시키기
-	        const x = (window.innerWidth - initialWidth) / 2;
-	        const y = (window.innerHeight - initialHeight) / 2;
-	        newImage.style.left = `${x}px`;
-	        newImage.style.top = `${y}px`;
+                // 화면 중앙에 위치시키기
+                const x = (window.innerWidth - initialWidth) / 2;
+                const y = (window.innerHeight - initialHeight) / 2;
+                newImage.style.left = `${x}px`;
+                newImage.style.top = `${y}px`;
 
-	        document.body.appendChild(newImage);
-	        initDraggable(newImage);
-	    };
+                document.body.appendChild(newImage);
+                initDraggable(newImage);
+            };
         }
 
         function initDraggable(element) {
@@ -207,7 +207,7 @@
                     document.addEventListener('touchmove', onTouchMove);
                     document.addEventListener('touchend', onTouchEnd);
                 } else if (e.touches.length === 2) {
-                    pinchToZoom(element, e);
+                    pinchToZoomAndRotate(element, e);
                 }
             });
 
@@ -233,12 +233,14 @@
             }
         }
 
-        function pinchToZoom(element, e) {
+        function pinchToZoomAndRotate(element, e) {
             e.preventDefault();
 
             let initialDistance = null;
+            let initialAngle = null;
             let initialWidth = element.clientWidth;
             let initialHeight = element.clientHeight;
+            let initialRotation = getRotationAngle(element);
 
             function calculateDistance(e) {
                 const distX = e.touches[0].clientX - e.touches[1].clientX;
@@ -246,13 +248,15 @@
                 return Math.sqrt(distX * distX + distY * distY);
             }
 
+            function calculateAngle(e) {
+                const deltaX = e.touches[1].clientX - e.touches[0].clientX;
+                const deltaY = e.touches[1].clientY - e.touches[0].clientY;
+                return Math.atan2(deltaY, deltaX) * (180 / Math.PI);
+            }
+
             if (initialDistance === null) {
                 initialDistance = calculateDistance(e);
-            } else {
-                const currentDistance = calculateDistance(e);
-                const scale = currentDistance / initialDistance;
-                element.style.width = initialWidth * scale + 'px';
-                element.style.height = initialHeight * scale + 'px';
+                initialAngle = calculateAngle(e);
             }
 
             function onPinchMove(e) {
@@ -261,6 +265,11 @@
                     const scale = currentDistance / initialDistance;
                     element.style.width = initialWidth * scale + 'px';
                     element.style.height = initialHeight * scale + 'px';
+
+                    const currentAngle = calculateAngle(e);
+                    const rotationDelta = currentAngle - initialAngle;
+                    const newRotation = initialRotation + rotationDelta;
+                    element.style.transform = `rotate(${newRotation}deg)`;
                 }
             }
 
@@ -268,82 +277,67 @@
                 document.removeEventListener('touchmove', onPinchMove);
                 document.removeEventListener('touchend', onPinchEnd);
                 initialDistance = null;
+                initialAngle = null;
             }
 
             document.addEventListener('touchmove', onPinchMove);
             document.addEventListener('touchend', onPinchEnd);
         }
 
-        function checkOverlap(element) {
-            const sphere = document.getElementById('sphere');
-            const sphereRect = sphere.getBoundingClientRect();
-            const elementRect = element.getBoundingClientRect();
-
-            if (elementRect.left < sphereRect.right &&
-                elementRect.right > sphereRect.left &&
-                elementRect.top < sphereRect.bottom &&
-                elementRect.bottom > sphereRect.top) {
-                sphere.style.opacity = 0.5;
-	    element.remove(); 
-            } else {
-                sphere.style.opacity = 1;
-            }
+        function getRotationAngle(element) {
+            const transform = window.getComputedStyle(element).transform;
+            if (transform === 'none') return 0;
+            const values = transform.split('(')[1].split(')')[0].split(',');
+            const a = parseFloat(values[0]);
+            const b = parseFloat(values[1]);
+            return Math.round(Math.atan2(b, a) * (180 / Math.PI));
         }
 
-        document.getElementById('capture-button').addEventListener('click', captureScreenshot);
+        function checkOverlap(element) {
+            const rect1 = element.getBoundingClientRect();
+            const items = document.querySelectorAll('.draggable');
+            items.forEach(other => {
+                if (other !== element) {
+                    const rect2 = other.getBoundingClientRect();
+                    if (!(rect1.right < rect2.left ||
+                          rect1.left > rect2.right ||
+                          rect1.bottom < rect2.top ||
+                          rect1.top > rect2.bottom)) {
+                        // Overlap detected
+                        element.style.border = "2px solid red";
+                    } else {
+                        element.style.border = "none";
+                    }
+                }
+            });
+        }
 
-        function captureScreenshot() {
+        function capturePhoto() {
             const video = document.getElementById('video');
             const canvas = document.getElementById('canvas');
-            const ctx = canvas.getContext('2d');
+            const context = canvas.getContext('2d');
 
-            // 캔버스 크기를 비디오의 실제 해상도로 설정
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-            // 화면 비율 계산
-            const scaleX = canvas.width / window.innerWidth;
-            const scaleY = canvas.height / window.innerHeight;
-
-            document.querySelectorAll('.draggable').forEach((img) => {
-                // 화면의 실제 위치와 크기를 비디오의 실제 해상도에 맞춰 계산
-                const imgWidth = img.clientWidth * scaleX;
-                const imgHeight = img.clientHeight * scaleY;
-                const imgX = img.offsetLeft * scaleX;
-                const imgY = img.offsetTop * scaleY;
-
-                ctx.drawImage(img, imgX, imgY, imgWidth, imgHeight);
-            });
-
-            const dataUrl = canvas.toDataURL('image/png');
-            showPreview(dataUrl);
+            const dataURL = canvas.toDataURL('image/png');
+            document.getElementById('preview-image').src = dataURL;
+            document.getElementById('preview-container').style.display = 'block';
         }
 
-        function showPreview(dataUrl) {
-            const previewImage = document.getElementById('preview-image');
-            const previewContainer = document.getElementById('preview-container');
+        document.getElementById('capture-button').addEventListener('click', function() {
+            capturePhoto();
+        });
 
-            previewImage.src = dataUrl;
-            previewContainer.style.display = 'block';
+        document.getElementById('preview-image').addEventListener('click', function() {
+            document.getElementById('fullsize-image-img').src = this.src;
+            document.getElementById('fullsize-image').style.display = 'flex';
+        });
 
-            previewImage.onclick = function() {
-                showFullSizeImage(dataUrl);
-            };
-        }
-
-        function showFullSizeImage(dataUrl) {
-            const fullSizeContainer = document.getElementById('fullsize-image');
-            const fullSizeImage = document.getElementById('fullsize-image-img');
-
-            fullSizeImage.src = dataUrl;
-            fullSizeContainer.style.display = 'flex';
-
-            fullSizeImage.onclick = function() {
-                fullSizeContainer.style.display = 'none';
-            };
-        }
+        document.getElementById('fullsize-image').addEventListener('click', function() {
+            this.style.display = 'none';
+        });
     </script>
 </body>
 </html>
