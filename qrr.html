@@ -277,6 +277,7 @@
                 elementRect.top < sphereRect.bottom &&
                 elementRect.bottom > sphereRect.top) {
                 sphere.style.opacity = 0.5;
+	    element.remove(); 
             } else {
                 sphere.style.opacity = 1;
             }
