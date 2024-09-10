@@ -174,17 +174,24 @@
             const newImage = document.createElement('img');
             newImage.src = src;
             newImage.className = 'draggable';
-            newImage.style.width = '100px';
-            newImage.style.height = '100px';
 
-            const x = (window.innerWidth - 100) / 2;
-            const y = (window.innerHeight - 100) / 2;
-            newImage.style.left = `${x}px`;
-            newImage.style.top = `${y}px`;
+            newImage.onload = function () {
+	        const aspectRatio = newImage.naturalWidth / newImage.naturalHeight; // 이미지의 원본 비율
+	        const initialWidth = 100; // 원하는 초기 너비 (100px)
+	        const initialHeight = initialWidth / aspectRatio; // 원본 비율에 따른 높이 계산
 
-            document.body.appendChild(newImage);
+	        newImage.style.width = initialWidth + 'px';
+	        newImage.style.height = initialHeight + 'px';
 
-            initDraggable(newImage);
+	        // 화면 중앙에 위치시키기
+	        const x = (window.innerWidth - initialWidth) / 2;
+	        const y = (window.innerHeight - initialHeight) / 2;
+	        newImage.style.left = `${x}px`;
+	        newImage.style.top = `${y}px`;
+
+	        document.body.appendChild(newImage);
+	        initDraggable(newImage);
+	    };
         }
 
         function initDraggable(element) {
