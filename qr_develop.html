@@ -91,6 +91,16 @@
             max-height: 90%;
             cursor: pointer;
         }
+        #switch {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-30%);
+            width: 60px;
+            height: 60px;
+            z-index: 2;
+            cursor: pointer;
+        }
         #sphere {
             position: fixed;
             bottom: 20px;
@@ -119,6 +129,8 @@
 
     <button id="capture-button"></button>
 
+    <img id="switch" src="switch.png" alt="Switch Camera">
+
     <img id="sphere" src="sphere.png" alt="Sphere">
 
     <div id="preview-container">
@@ -133,16 +145,18 @@
 
     <script>
         let currentStream = null;
+        let isFrontCamera = false;
 
         window.onload = function() {
             startCamera();
             initItemEvents();
+            initSwitchButton();
         };
 
         function startCamera() {
             const constraints = {
                 video: {
-                    facingMode: "environment",
+                    facingMode: isFrontCamera ? "user" : "environment",
                     width: { ideal: 1920 },
                     height: { ideal: 1080 }
                 }
@@ -156,6 +170,7 @@
                     video.onloadedmetadata = function() {
                         video.play();
                     };
+                    video.style.transform = isFrontCamera ? 'scaleX(-1)' : 'none';
                 })
                 .catch(function(err) {
                     console.error("Error: " + err);
@@ -164,10 +179,16 @@
         }
 
         function initItemEvents() {
-            document.querySelectorAll('.overlay-image').forEach((img) => {
-                img.addEventListener('click', function(e) {
-                    createCentralItem(e.target.src);
+            const overlayImages = document.querySelectorAll('.overlay-image');
+            overlayImages.forEach(image => {
+                image.addEventListener('click', function() {
+                    createCentralItem(this.src);
                 });
+            });
+
+            document.getElementById('switch').addEventListener('click', function() {
+                isFrontCamera = !isFrontCamera;
+                startCamera();
             });
         }
 
@@ -256,126 +277,89 @@
                 return angle * (180 / Math.PI);
             }
 
-            if (initialDistance === null) {
-                initialDistance = calculateDistance(e);
-                initialAngle = calculateAngle(e);
-            } else {
-                const currentDistance = calculateDistance(e);
-                const currentAngle = calculateAngle(e);
-                const scale = currentDistance / initialDistance;
-                const rotation = currentAngle - initialAngle;
-
-                element.style.width = initialWidth * scale + 'px';
-                element.style.height = initialHeight * scale + 'px';
-                element.style.transform = `rotate(${rotation}deg)`;
-            }
-
-            function onPinchMove(e) {
+            function onTouchMove(e) {
                 if (e.touches.length === 2) {
-                    const currentDistance = calculateDistance(e);
-                    const currentAngle = calculateAngle(e);
-                    const scale = currentDistance / initialDistance;
-                    const rotation = currentAngle - initialAngle;
+                    const newDistance = calculateDistance(e);
+                    const newAngle = calculateAngle(e);
 
-                    element.style.width = initialWidth * scale + 'px';
-                    element.style.height = initialHeight * scale + 'px';
-                    element.style.transform = `rotate(${rotation}deg)`;
+                    if (initialDistance === null) {
+                        initialDistance = newDistance;
+                        initialAngle = newAngle;
+                    } else {
+                        const scale = newDistance / initialDistance;
+                        const angle = newAngle - initialAngle;
+
+                        element.style.width = (initialWidth * scale) + 'px';
+                        element.style.height = (initialHeight * scale) + 'px';
+                        element.style.transform = `rotate(${angle}deg)`;
+
+                        element.style.zIndex = 11; // Bring element to the front
+                    }
                 }
             }
 
-            function onPinchEnd() {
-                document.removeEventListener('touchmove', onPinchMove);
-                document.removeEventListener('touchend', onPinchEnd);
-                initialDistance = null;
-            }
-
-            document.addEventListener('touchmove', onPinchMove);
-            document.addEventListener('touchend', onPinchEnd);
+            document.addEventListener('touchmove', onTouchMove);
+            document.addEventListener('touchend', function() {
+                document.removeEventListener('touchmove', onTouchMove);
+                document.removeEventListener('touchend', arguments.callee);
+            });
         }
 
         function checkOverlap(element) {
-            const sphere = document.getElementById('sphere');
-            const sphereRect = sphere.getBoundingClientRect();
-            const elementRect = element.getBoundingClientRect();
+            const rect = element.getBoundingClientRect();
+            const sphere = document.getElementById('sphere').getBoundingClientRect();
 
-            if (elementRect.left < sphereRect.right &&
-                elementRect.right > sphereRect.left &&
-                elementRect.top < sphereRect.bottom &&
-                elementRect.bottom > sphereRect.top) {
-                sphere.style.opacity = 0.5;
-                element.remove();
+            if (rect.left < sphere.right && rect.right > sphere.left &&
+                rect.top < sphere.bottom && rect.bottom > sphere.top) {
+                element.style.display = 'none';
             } else {
-                sphere.style.opacity = 1;
+                element.style.display = 'block';
             }
         }
 
-        document.getElementById('capture-button').addEventListener('click', captureScreenshot);
+        document.getElementById('capture-button').addEventListener('click', function() {
+            captureScreenshot();
+        });
 
         function captureScreenshot() {
             const video = document.getElementById('video');
             const canvas = document.getElementById('canvas');
-            const ctx = canvas.getContext('2d');
+            const context = canvas.getContext('2d');
 
-            // 캔버스 크기를 비디오의 실제 해상도로 설정
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
 
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            context.drawImage(video, 0, 0);
 
-            // 화면 비율 계산
-            const scaleX = canvas.width / window.innerWidth;
-            const scaleY = canvas.height / window.innerHeight;
-
-            document.querySelectorAll('.draggable').forEach((img) => {
-                // 화면의 실제 위치와 크기를 비디오의 실제 해상도에 맞춰 계산
-                const imgWidth = img.clientWidth * scaleX;
-                const imgHeight = img.clientHeight * scaleY;
-                const imgX = img.offsetLeft * scaleX;
-                const imgY = img.offsetTop * scaleY;
-               // 이미지 회전 값 가져오기
-                const transform = window.getComputedStyle(img).transform;
-                let angle = 0;
-
-                if (transform !== 'none') {
-                    const values = transform.split('(')[1].split(')')[0].split(',');
-                    const a = values[0];
-                    const b = values[1];
-                    angle = Math.round(Math.atan2(b, a) * (180 / Math.PI));
-                }
-
-                ctx.save();
-                ctx.translate(imgX + imgWidth / 2, imgY + imgHeight / 2); // 이미지의 중심으로 이동
-                ctx.rotate(angle * Math.PI / 180); // 회전 적용
-                ctx.drawImage(img, -imgWidth / 2, -imgHeight / 2, imgWidth, imgHeight); // 중심 기준으로 이미지 그림
-                ctx.restore();
+            const overlayImages = document.querySelectorAll('.draggable');
+            overlayImages.forEach(image => {
+                const img = new Image();
+                img.src = image.src;
+                img.onload = function() {
+                    context.drawImage(img, image.offsetLeft, image.offsetTop, image.clientWidth, image.clientHeight);
+                };
             });
 
-            const dataUrl = canvas.toDataURL('image/png');
-            showPreview(dataUrl);
+            const dataURL = canvas.toDataURL('image/png');
+            document.getElementById('preview-image').src = dataURL;
+            document.getElementById('preview-container').style.display = 'block';
         }
 
-        function showPreview(dataUrl) {
-            const previewImage = document.getElementById('preview-image');
-            const previewContainer = document.getElementById('preview-container');
+        document.getElementById('preview-image').addEventListener('click', function() {
+            const fullsizeImage = document.getElementById('fullsize-image');
+            fullsizeImage.style.display = 'flex';
+            document.getElementById('fullsize-image-img').src = this.src;
+        });
 
-            previewImage.src = dataUrl;
-            previewContainer.style.display = 'block';
+        document.getElementById('fullsize-image').addEventListener('click', function() {
+            this.style.display = 'none';
+        });
 
-            previewImage.onclick = function() {
-                showFullSizeImage(dataUrl);
-            };
-        }
-
-        function showFullSizeImage(dataUrl) {
-            const fullSizeContainer = document.getElementById('fullsize-image');
-            const fullSizeImage = document.getElementById('fullsize-image-img');
-
-            fullSizeImage.src = dataUrl;
-            fullSizeContainer.style.display = 'flex';
-
-            fullSizeImage.onclick = function() {
-                fullSizeContainer.style.display = 'none';
-            };
+        function initSwitchButton() {
+            document.getElementById('switch').addEventListener('click', function() {
+                isFrontCamera = !isFrontCamera;
+                startCamera();
+            });
         }
     </script>
 </body>
