@@ -187,8 +187,8 @@
                 // 화면 중앙에 위치시키기
                 const x = (window.innerWidth - initialWidth) / 2;
                 const y = (window.innerHeight - initialHeight) / 2;
-                newImage.style.left = ${x}px;
-                newImage.style.top = ${y}px;
+                newImage.style.left = `${x}px`;
+                newImage.style.top = `${y}px`;
 
                 document.body.appendChild(newImage);
                 initDraggable(newImage);
@@ -267,7 +267,7 @@
 
                 element.style.width = initialWidth * scale + 'px';
                 element.style.height = initialHeight * scale + 'px';
-                element.style.transform = rotate(${rotation}deg);
+                element.style.transform = `rotate(${rotation}deg)`;
             }
 
             function onPinchMove(e) {
@@ -279,7 +279,7 @@
 
                     element.style.width = initialWidth * scale + 'px';
                     element.style.height = initialHeight * scale + 'px';
-                    element.style.transform = rotate(${rotation}deg);
+                    element.style.transform = `rotate(${rotation}deg)`;
                 }
             }
 
