@@ -91,18 +91,6 @@
             max-height: 90%;
             cursor: pointer;
         }
-
-        #switch {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 60px;
-            height: 60px;
-            z-index: 2;
-            cursor: pointer;
-        }
-
         #sphere {
             position: fixed;
             bottom: 20px;
@@ -131,8 +119,6 @@
 
     <button id="capture-button"></button>
 
-    <img id="switch" src="switch.png" alt="Switch Camera">
-
     <img id="sphere" src="sphere.png" alt="Sphere">
 
     <div id="preview-container">
@@ -147,18 +133,16 @@
 
     <script>
         let currentStream = null;
-        let isFrontCamera = false;
 
         window.onload = function() {
             startCamera();
             initItemEvents();
-            initSwitchButton();
         };
 
         function startCamera() {
             const constraints = {
                 video: {
-                    facingMode: isFrontCamera ? "user" : "environment",
+                    facingMode: "environment",
                     width: { ideal: 1920 },
                     height: { ideal: 1080 }
                 }
@@ -172,7 +156,6 @@
                     video.onloadedmetadata = function() {
                         video.play();
                     };
-                    video.style.transform = isFrontCamera ? 'scaleX(-1)' : 'none';
                 })
                 .catch(function(err) {
                     console.error("Error: " + err);
@@ -181,9 +164,10 @@
         }
 
         function initItemEvents() {
-            document.getElementById('switch').addEventListener('click', function() {
-                isFrontCamera = !isFrontCamera;
-                startCamera();
+            document.querySelectorAll('.overlay-image').forEach((img) => {
+                img.addEventListener('click', function(e) {
+                    createCentralItem(e.target.src);
+                });
             });
         }
 
