@@ -38,7 +38,7 @@
         #hands {
             right: 50%; 
             top: 50%; 
-            transform: translate(52%, 52%);
+            transform: translate(50%, 50%);
             display: none; /* 선택 시 활성화 */
         }
 
@@ -51,9 +51,9 @@
         }
 
         @keyframes moveDiagonal {
-            0% { transform: translate(52%, 52%); }
+            0% { transform: translate(50%, 50%); }
             50% { transform: translate(60%, 60%); }
-            100% { transform: translate(52%, 52%); }
+            100% { transform: translate(50%, 50%); }
         }
 
         @keyframes moveToSphere {
@@ -81,6 +81,28 @@
             position: absolute;
             cursor: move;
         }
+
+        #sphere {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            width: 100px;
+            height: 100px;
+            background: url('sphere.png') no-repeat center center;
+            background-size: cover;
+            z-index: 5;
+        }
+
+        #camera {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            width: 100px;
+            height: 100px;
+            background: url('camera.png') no-repeat center center;
+            background-size: cover;
+            z-index: 5;
+        }
     </style>
 </head>
 <body>
@@ -104,6 +126,10 @@
     <img id="hands" class="animated-image" src="hands.png" alt="Hands Animation">
     <img id="hand_rotation" class="animated-image" src="hand_rotation.gif" alt="Hand Rotation Animation">
     <img id="click" class="animated-image" src="click.gif" alt="Click Animation">
+
+    <!-- UI 요소 -->
+    <div id="sphere"></div>
+    <div id="camera"></div>
 
     <!-- 스크립트 -->
     <script>
@@ -148,6 +174,7 @@
                     if (!isDragging) {
                         document.getElementById('swipe').style.display = 'none'; // 아이템 클릭 시 swipe 애니메이션 숨김
                         document.getElementById('hands').style.display = 'block'; // hands 애니메이션 활성화
+                        document.getElementById('hands').style.animation = 'moveDiagonal 1s infinite'; // 대각선 이동 애니메이션
                         createCentralItem(e.target.src);
                     }
                 });
@@ -227,6 +254,7 @@
         function pinchToZoomAndRotate(element, e) {
             e.preventDefault();
             document.getElementById('hand_rotation').style.display = 'none'; // 핀치줌 또는 회전 시 hand_rotation 비활성화
+
             // 핀치줌/회전 로직 ...
         }
 
