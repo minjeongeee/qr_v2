@@ -10,7 +10,6 @@
             padding: 0;
             overflow: hidden;
         }
-
         #video {
             position: fixed;
             top: 0;
@@ -20,42 +19,118 @@
             object-fit: cover;
             z-index: 1;
         }
-
-        .animated-image {
+        #capture-button {
             position: fixed;
-            z-index: 9999; 
-            width: auto;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2;
+            width: 60px;
+            height: 60px;
+            background: url('camera.png') no-repeat center center;
+            background-size: contain;
+            border: none;
+            cursor: pointer;
+        }
+        #overlay-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
             height: 80px;
-            display: none; /* 처음에 모든 애니메이션 이미지 숨김 */
+            overflow-x: auto;
+            overflow-y: hidden;
+            white-space: nowrap;
+            background-color: rgba(255, 255, 255, 0.5);
+            z-index: 2;
+            padding: 10px 0;
         }
-
-        #swipe {
-            right: 5px;
-            top: 70px;
-            display: none; /* 처음에 숨기지만 카메라 허용 시 활성화 */
+        .overlay-image {
+            display: inline-block;
+            margin: 0 10px;
+            cursor: pointer;
+            touch-action: none;
+            height: 50px;
+            width: auto;
         }
-
-        #hands, #hand_rotation, #click {
-            right: 50%; 
-            top: 50%; 
-            transform: translate(52%, 52%);
-            display: none; /* 다른 애니메이션 이미지들도 초기엔 숨김 */
+        .draggable {
+            position: absolute;
+            touch-action: none;
+            z-index: 10;
+            transform-origin: center center;
         }
-
-        /* 기타 기존 스타일 유지 */
+        #preview-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 2;
+            width: 100px;
+            height: 100px;
+            display: none;
+        }
+        #preview-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            cursor: pointer;
+        }
+        #fullsize-image {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        #fullsize-image img {
+            max-width: 90%;
+            max-height: 90%;
+            cursor: pointer;
+        }
+        #sphere {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 48px;
+            height: 70px;
+            z-index: 2;
+        }
     </style>
 </head>
 <body>
-    <!-- 기존 HTML 코드 유지 -->
+
     <video id="video" autoplay playsinline></video>
 
-    <!-- 애니메이션 이미지 -->
-    <img id="swipe" class="animated-image" src="swipe.gif" alt="Swipe Animation">
-    <img id="hands" class="animated-image" src="hands.png" alt="Hands Animation">
-    <img id="hand_rotation" class="animated-image" src="hand_rotation.gif" alt="Hand Rotation Animation">
-    <img id="click" class="animated-image" src="click.gif" alt="Click Animation">
+    <div id="overlay-container">
+        <img id="joy" class="overlay-image" src="joy.png" alt="joy Overlay">
+        <img id="sad" class="overlay-image" src="sad.png" alt="sad Overlay">
+        <img id="disgust" class="overlay-image" src="disgust.png" alt="disgust Overlay">
+        <img id="anger" class="overlay-image" src="anger.png" alt="anger Overlay">
+        <img id="fear" class="overlay-image" src="fear.png" alt="fear Overlay">
+        <img id="envy" class="overlay-image" src="envy.png" alt="envy Overlay">
+        <img id="ansiety" class="overlay-image" src="ansiety.png" alt="ansiety Overlay">
+        <img id="ennui" class="overlay-image" src="ennui.png" alt="ennui Overlay">
+        <img id="ambarrassment" class="overlay-image" src="ambarrassment.png" alt="ambarrassment Overlay">
+    </div>
 
-    <!-- 기존 HTML 코드 유지 -->
+    <button id="capture-button"></button>
+
+    <img id="sphere" src="sphere.png" alt="Sphere">
+
+    <div id="preview-container">
+        <img id="preview-image" alt="Preview">
+    </div>
+
+    <div id="fullsize-image">
+        <img id="fullsize-image-img" alt="Full Size">
+    </div>
+
+    <canvas id="canvas" style="display: none;"></canvas>
+
     <script>
         let currentStream = null;
 
@@ -81,7 +156,6 @@
                     video.onloadedmetadata = function() {
                         video.play();
                     };
-                    document.getElementById('swipe').style.display = 'block'; // 카메라 허용 시 swipe 애니메이션 활성화
                 })
                 .catch(function(err) {
                     console.error("Error: " + err);
@@ -92,8 +166,6 @@
         function initItemEvents() {
             document.querySelectorAll('.overlay-image').forEach((img) => {
                 img.addEventListener('click', function(e) {
-                    document.getElementById('swipe').style.display = 'none'; // 아이템 클릭 시 swipe 애니메이션 숨김
-                    document.getElementById('hands').style.display = 'block'; // hands 애니메이션 활성화
                     createCentralItem(e.target.src);
                 });
             });
@@ -105,13 +177,14 @@
             newImage.className = 'draggable';
 
             newImage.onload = function () {
-                const aspectRatio = newImage.naturalWidth / newImage.naturalHeight;
-                const initialWidth = 100;
-                const initialHeight = initialWidth / aspectRatio;
+                const aspectRatio = newImage.naturalWidth / newImage.naturalHeight; // 이미지의 원본 비율
+                const initialWidth = 100; // 원하는 초기 너비 (100px)
+                const initialHeight = initialWidth / aspectRatio; // 원본 비율에 따른 높이 계산
 
                 newImage.style.width = initialWidth + 'px';
                 newImage.style.height = initialHeight + 'px';
 
+                // 화면 중앙에 위치시키기
                 const x = (window.innerWidth - initialWidth) / 2;
                 const y = (window.innerHeight - initialHeight) / 2;
                 newImage.style.left = `${x}px`;
@@ -123,17 +196,17 @@
         }
 
         function initDraggable(element) {
-            let posX = 0, posY = 0;
+            let posX = 0, posY = 0, initialRotation = 0;
+
             element.addEventListener('touchstart', function(e) {
                 if (e.touches.length === 1) {
                     const touch = e.touches[0];
                     posX = touch.clientX;
                     posY = touch.clientY;
 
-                    element.style.zIndex = 11;
+                    element.style.zIndex = 11; // Bring element to the front
                     document.addEventListener('touchmove', onTouchMove);
                     document.addEventListener('touchend', onTouchEnd);
-                    document.getElementById('hands').style.display = 'none'; // hands 애니메이션 숨김
                 } else if (e.touches.length === 2) {
                     pinchToZoomAndRotate(element, e);
                 }
@@ -214,7 +287,6 @@
                 document.removeEventListener('touchmove', onPinchMove);
                 document.removeEventListener('touchend', onPinchEnd);
                 initialDistance = null;
-                document.getElementById('hand_rotation').style.display = 'none'; // 회전 애니메이션 숨김
             }
 
             document.addEventListener('touchmove', onPinchMove);
@@ -232,20 +304,78 @@
                 elementRect.bottom > sphereRect.top) {
                 sphere.style.opacity = 0.5;
                 element.remove();
-                document.getElementById('hands').style.display = 'none';
-                showClickAnimation(); 
             } else {
                 sphere.style.opacity = 1;
             }
         }
 
-        function showClickAnimation() {
-            const click = document.getElementById('click');
-            click.style.display = 'block';
-            click.style.left = document.getElementById('capture-button').getBoundingClientRect().left + 'px';
-            click.style.top = document.getElementById('capture-button').getBoundingClientRect().top - 80 + 'px';
+        document.getElementById('capture-button').addEventListener('click', captureScreenshot);
 
-            setTimeout(() => click.style.display = 'none', 3000);
+        function captureScreenshot() {
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+
+            // 캔버스 크기를 비디오의 실제 해상도로 설정
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // 화면 비율 계산
+            const scaleX = canvas.width / window.innerWidth;
+            const scaleY = canvas.height / window.innerHeight;
+
+            document.querySelectorAll('.draggable').forEach((img) => {
+                // 화면의 실제 위치와 크기를 비디오의 실제 해상도에 맞춰 계산
+                const imgWidth = img.clientWidth * scaleX;
+                const imgHeight = img.clientHeight * scaleY;
+                const imgX = img.offsetLeft * scaleX;
+                const imgY = img.offsetTop * scaleY;
+               // 이미지 회전 값 가져오기
+                const transform = window.getComputedStyle(img).transform;
+                let angle = 0;
+
+                if (transform !== 'none') {
+                    const values = transform.split('(')[1].split(')')[0].split(',');
+                    const a = values[0];
+                    const b = values[1];
+                    angle = Math.round(Math.atan2(b, a) * (180 / Math.PI));
+                }
+
+                ctx.save();
+                ctx.translate(imgX + imgWidth / 2, imgY + imgHeight / 2); // 이미지의 중심으로 이동
+                ctx.rotate(angle * Math.PI / 180); // 회전 적용
+                ctx.drawImage(img, -imgWidth / 2, -imgHeight / 2, imgWidth, imgHeight); // 중심 기준으로 이미지 그림
+                ctx.restore();
+            });
+
+            const dataUrl = canvas.toDataURL('image/png');
+            showPreview(dataUrl);
+        }
+
+        function showPreview(dataUrl) {
+            const previewImage = document.getElementById('preview-image');
+            const previewContainer = document.getElementById('preview-container');
+
+            previewImage.src = dataUrl;
+            previewContainer.style.display = 'block';
+
+            previewImage.onclick = function() {
+                showFullSizeImage(dataUrl);
+            };
+        }
+
+        function showFullSizeImage(dataUrl) {
+            const fullSizeContainer = document.getElementById('fullsize-image');
+            const fullSizeImage = document.getElementById('fullsize-image-img');
+
+            fullSizeImage.src = dataUrl;
+            fullSizeContainer.style.display = 'flex';
+
+            fullSizeImage.onclick = function() {
+                fullSizeContainer.style.display = 'none';
+            };
         }
     </script>
 </body>
