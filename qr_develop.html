@@ -101,11 +101,11 @@
         }
         #swipe-image {
             position: fixed;
-            top: 80px; /* Adjust to be right below the container */
-            Right: 0;
-            width: 70px; /* Set width to 70px */
-            height: 70px; /* Set height to 70px */
-            display: none; /* Initially hidden */
+            top: 80px;
+            right: 0;
+            width: 70px;
+            height: 70px;
+            display: none;
             z-index: 3;
         }
         #text-image {
@@ -113,7 +113,7 @@
             right: 0px;
             top: 80px;
             transform: scale(0.5);
-            display: none; /* Initially hidden */
+            display: none;
             z-index: 3;
         }
         #slider-overlay {
@@ -200,24 +200,12 @@
             setTimeout(() => {
                 document.getElementById('swipe-image').style.display = 'block';
                 document.getElementById('text-image').style.display = 'block';
-                disableInteractions(true);
             }, 0); // Display after everything is loaded
         }
 
         function hideFloatingImages() {
             document.getElementById('swipe-image').style.display = 'none';
             document.getElementById('text-image').style.display = 'none';
-            disableInteractions(false);
-        }
-
-        function disableInteractions(disable) {
-            const captureButton = document.getElementById('capture-button');
-            const overlayImages = document.querySelectorAll('.overlay-image');
-            const sliderOverlay = document.getElementById('slider-overlay');
-
-            captureButton.disabled = disable;
-            overlayImages.forEach(img => img.style.pointerEvents = disable ? 'none' : 'auto');
-            sliderOverlay.style.display = disable ? 'block' : 'none';
         }
 
         function initItemEvents() {
