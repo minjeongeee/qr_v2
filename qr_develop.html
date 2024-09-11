@@ -61,10 +61,33 @@
             0% { transform: translate(0, 0); }
             100% { transform: translate(150px, 200px); } /* 예시 이동 거리 */
         }
+
+        /* 기본 UI를 위한 스타일 추가 */
+        #slider, .overlay-image {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            z-index: 10;
+        }
+
+        .overlay-image {
+            width: 70px; /* 예시 크기 */
+            height: 70px; /* 예시 크기 */
+            margin: 5px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
     <video id="video" autoplay playsinline></video>
+
+    <!-- 초기 UI 구성 -->
+    <div id="slider">
+        <img class="overlay-image" src="joy.png" alt="Joy">
+        <img class="overlay-image" src="sad.png" alt="Sad">
+        <img class="overlay-image" src="disgust.png" alt="Disgust">
+        <!-- 나머지 아이템 추가 -->
+    </div>
 
     <!-- 애니메이션 이미지 -->
     <img id="swipe" class="animated-image" src="swipe.gif" alt="Swipe Animation">
@@ -98,7 +121,8 @@
                     video.onloadedmetadata = function() {
                         video.play();
                     };
-                    document.getElementById('swipe').style.display = 'block'; // 카메라 허용 시 swipe 애니메이션 활성화
+                    // 기존 UI는 그대로 두고 swipe 애니메이션만 활성화
+                    document.getElementById('swipe').style.display = 'block'; 
                 })
                 .catch(function(err) {
                     console.error("Error: " + err);
