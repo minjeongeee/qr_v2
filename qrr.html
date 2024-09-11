@@ -193,6 +193,25 @@
             textImage.className = 'floating-image';
             textImage.style.transform = 'scale(0.5)';  // 50%로 줄이기
             document.body.appendChild(textImage);
+
+            // 위치 설정
+            positionImages();
+        }
+
+
+        function positionImages() {
+            const textImage = document.getElementById('text-image');
+            const swipeImage = document.getElementById('swipe-image');
+
+            // text 이미지 위치 설정
+            textImage.style.position = 'absolute';
+            textImage.style.top = '90px'; // UI 컨테이너 바로 아래 10픽셀
+            textImage.style.right = '5px'; // 우측에 5픽셀 띄우기
+
+            // swipe 이미지 위치 설정 (text 이미지의 왼쪽에 붙이기)
+            swipeImage.style.position = 'absolute';
+            swipeImage.style.top = '90px'; // UI 컨테이너 바로 아래 10픽셀
+            swipeImage.style.right = `${textImage.offsetWidth + 10}px`; // text 이미지 왼쪽에 붙이기
         }
 
         function initItemEvents() {
