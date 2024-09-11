@@ -24,7 +24,7 @@
         .animated-image {
             position: fixed;
             z-index: 9999;
-            width: auto;
+            width: 80px; /* 고정된 높이 */
             height: 80px; /* 고정된 높이 */
             display: none; /* 초기엔 숨김 */
         }
@@ -40,6 +40,7 @@
             top: 50%; 
             transform: translate(52%, 52%);
             display: none; /* 선택 시 활성화 */
+            animation: moveDiagonal 1s infinite alternate; /* 대각선 애니메이션 */
         }
 
         #hand_rotation {
@@ -50,7 +51,6 @@
             display: none; /* sphere와 오버랩 시 활성화 */
         }
 
-        /* 애니메이션 반복 스타일 */
         @keyframes moveDiagonal {
             0% { transform: translate(52%, 52%); }
             50% { transform: translate(60%, 60%); }
@@ -62,19 +62,25 @@
             100% { transform: translate(150px, 200px); } /* 예시 이동 거리 */
         }
 
-        /* 기본 UI를 위한 스타일 추가 */
-        #slider, .overlay-image {
+        #slider {
             position: fixed;
             top: 10px;
             left: 10px;
             z-index: 10;
+            display: flex; /* 슬라이더 아이템을 수평으로 배치 */
+            overflow-x: auto; /* 수평 스크롤 가능 */
         }
 
         .overlay-image {
-            width: 70px; /* 예시 크기 */
-            height: 70px; /* 예시 크기 */
-            margin: 5px;
+            width: 70px;
+            height: 70px;
+            margin: 0 5px; /* 이미지 간격 조정 */
             cursor: pointer;
+        }
+
+        .draggable {
+            position: absolute;
+            cursor: move;
         }
     </style>
 </head>
@@ -86,7 +92,12 @@
         <img class="overlay-image" src="joy.png" alt="Joy">
         <img class="overlay-image" src="sad.png" alt="Sad">
         <img class="overlay-image" src="disgust.png" alt="Disgust">
-        <!-- 나머지 아이템 추가 -->
+        <img class="overlay-image" src="anger.png" alt="Anger">
+        <img class="overlay-image" src="fear.png" alt="Fear">
+        <img class="overlay-image" src="envy.png" alt="Envy">
+        <img class="overlay-image" src="anxiety.png" alt="Anxiety">
+        <img class="overlay-image" src="ennui.png" alt="Ennui">
+        <img class="overlay-image" src="embarrassment.png" alt="Embarrassment">
     </div>
 
     <!-- 애니메이션 이미지 -->
@@ -121,7 +132,7 @@
                     video.onloadedmetadata = function() {
                         video.play();
                     };
-                    // 기존 UI는 그대로 두고 swipe 애니메이션만 활성화
+                    // 카메라 허용 후 swipe 애니메이션 활성화
                     document.getElementById('swipe').style.display = 'block'; 
                 })
                 .catch(function(err) {
@@ -135,7 +146,6 @@
                 img.addEventListener('click', function(e) {
                     document.getElementById('swipe').style.display = 'none'; // 아이템 클릭 시 swipe 애니메이션 숨김
                     document.getElementById('hands').style.display = 'block'; // hands 애니메이션 활성화
-                    document.getElementById('hands').style.animation = 'moveDiagonal 1s infinite'; // 대각선 이동 애니메이션
                     createCentralItem(e.target.src);
                 });
             });
@@ -145,8 +155,10 @@
             const newImage = document.createElement('img');
             newImage.src = src;
             newImage.className = 'draggable';
+            newImage.style.width = '100px'; // 기본 크기 설정
+            newImage.style.height = 'auto';
 
-            newImage.onload = function () {
+            newImage.onload = function() {
                 const aspectRatio = newImage.naturalWidth / newImage.naturalHeight;
                 const initialWidth = 100;
                 const initialHeight = initialWidth / aspectRatio;
