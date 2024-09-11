@@ -99,6 +99,17 @@
             height: 60px;
             z-index: 2;
         }
+        #swipe-image {
+            position: fixed;
+            bottom: 100px; /* Just below the UI container box */
+            right: 0;
+            width: 70px;
+            height: 70px;
+            background: url('swipe.png') no-repeat center center;
+            background-size: contain;
+            z-index: 3;
+            display: none; /* Initially hidden */
+        }
     </style>
 </head>
 <body>
@@ -129,14 +140,18 @@
         <img id="fullsize-image-img" alt="Full Size">
     </div>
 
+    <div id="swipe-image"></div>
+
     <canvas id="canvas" style="display: none;"></canvas>
 
     <script>
         let currentStream = null;
+        let swipeImageShown = false;
 
         window.onload = function() {
             startCamera();
             initItemEvents();
+            checkCameraPermission();
         };
 
         function startCamera() {
@@ -256,6 +271,7 @@
                 return angle * (180 / Math.PI);
             }
 
+
             if (initialDistance === null) {
                 initialDistance = calculateDistance(e);
                 initialAngle = calculateAngle(e);
@@ -309,6 +325,35 @@
             }
         }
 
+        function checkCameraPermission() {
+            // Check if camera access is granted
+            navigator.permissions.query({ name: 'camera' }).then(function(permissionStatus) {
+                if (permissionStatus.state === 'granted') {
+                    showSwipeImage();
+                } else {
+                    permissionStatus.onchange = function() {
+                        if (permissionStatus.state === 'granted') {
+                            showSwipeImage();
+                        } else {
+                            hideSwipeImage();
+                        }
+                    };
+                }
+            });
+        }
+
+        function showSwipeImage() {
+            if (!swipeImageShown) {
+                document.getElementById('swipe-image').style.display = 'block';
+                swipeImageShown = true;
+            }
+        }
+
+        function hideSwipeImage() {
+            document.getElementById('swipe-image').style.display = 'none';
+            swipeImageShown = false;
+        }
+
         document.getElementById('capture-button').addEventListener('click', captureScreenshot);
 
         function captureScreenshot() {
@@ -332,7 +377,7 @@
                 const imgHeight = img.clientHeight * scaleY;
                 const imgX = img.offsetLeft * scaleX;
                 const imgY = img.offsetTop * scaleY;
-               // 이미지 회전 값 가져오기
+                // 이미지 회전 값 가져오기
                 const transform = window.getComputedStyle(img).transform;
                 let angle = 0;
 
@@ -377,6 +422,12 @@
                 fullSizeContainer.style.display = 'none';
             };
         }
+
+        // Hide swipe image when slider progresses (This part depends on the slider implementation)
+        function onSliderProgress() {
+            hideSwipeImage();
+        }
+
     </script>
 </body>
 </html>
