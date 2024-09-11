@@ -19,6 +19,9 @@
             object-fit: cover;
             z-index: 1;
         }
+        .flip-horizontal {
+            transform: scaleX(-1);
+        }
         #capture-button {
             position: fixed;
             bottom: 20px;
@@ -175,6 +178,13 @@
                     video.onloadedmetadata = function() {
                         video.play();
                     };
+                    
+                    // Apply the flip class if using the front camera
+                    if (facingMode === "user") {
+                        video.classList.add('flip-horizontal');
+                    } else {
+                        video.classList.remove('flip-horizontal');
+                    }
                 })
                 .catch(function(err) {
                     console.error("Error: " + err);
