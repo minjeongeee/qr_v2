@@ -110,6 +110,7 @@
         #text-image {
             right: 5px; /* 오른쪽 여백 */
             top: 100px; /* UI 컨테이너 아래 10픽셀 */
+            transform: scale(0.5); /* 이미지 크기 50% */
         }
     </style>
 </head>
@@ -190,6 +191,7 @@
             textImage.src = 'text.png';
             textImage.id = 'text-image';
             textImage.className = 'floating-image';
+            textImage.style.transform = 'scale(0.5)';  // 50%로 줄이기
             document.body.appendChild(textImage);
         }
 
