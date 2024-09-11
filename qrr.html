@@ -99,21 +99,6 @@
             height: 60px;
             z-index: 2;
         }
-        .floating-image {
-            position: fixed;
-            z-index: 3;
-        }
-        #swipe-image {
-            position: fixed;
-            top: 90px; /* UI 컨테이너 아래 10픽셀 */
-            left: calc(100% - 112px); /* text 이미지 너비 + 2px 오른쪽 여백 */
-        }
-        #text-image {
-            position: fixed;
-            right: 2px; /* 오른쪽 여백 */
-            top: 90px; /* UI 컨테이너 아래 10픽셀 */
-            transform: scale(0.5); /* 이미지 크기 50% */
-        }
     </style>
 </head>
 <body>
@@ -171,37 +156,12 @@
                     video.onloadedmetadata = function() {
                         video.play();
                     };
-                    // 카메라가 성공적으로 시작되면 이미지를 추가합니다.
-                    addImages();
                 })
                 .catch(function(err) {
                     console.error("Error: " + err);
                     alert("Could not access the camera. Please check your permissions.");
                 });
         }
-
-        function addImages() {
-            // swipe.gif 이미지 추가
-            const swipeImage = document.createElement('img');
-            swipeImage.src = 'swipe.gif';
-            swipeImage.id = 'swipe-image';
-            swipeImage.className = 'floating-image';
-            document.body.appendChild(swipeImage);
-
-            // text.png 이미지 추가
-            const textImage = document.createElement('img');
-            textImage.src = 'text.png';
-            textImage.id = 'text-image';
-            textImage.className = 'floating-image';
-            textImage.style.transform = 'scale(0.5)';  // 50%로 줄이기
-            document.body.appendChild(textImage);
-
-            // 위치 설정
-            positionImages();
-        }
-
-
-        
 
         function initItemEvents() {
             document.querySelectorAll('.overlay-image').forEach((img) => {
@@ -281,42 +241,52 @@
             let initialWidth = element.clientWidth;
             let initialHeight = element.clientHeight;
             let initialAngle = 0;
-            let initialRotation = parseFloat(element.getAttribute('data-rotation')) || 0;
 
-            function calculateDistance(touches) {
-                const dx = touches[0].clientX - touches[1].clientX;
-                const dy = touches[0].clientY - touches[1].clientY;
-                return Math.sqrt(dx * dx + dy * dy);
+            function calculateDistance(e) {
+                const distX = e.touches[0].clientX - e.touches[1].clientX;
+                const distY = e.touches[0].clientY - e.touches[1].clientY;
+                return Math.sqrt(distX * distX + distY * distY);
             }
 
-            function calculateAngle(touches) {
-                const dx = touches[1].clientX - touches[0].clientX;
-                const dy = touches[1].clientY - touches[0].clientY;
-                return Math.atan2(dy, dx) * (180 / Math.PI);
+            function calculateAngle(e) {
+                const angle = Math.atan2(
+                    e.touches[1].clientY - e.touches[0].clientY,
+                    e.touches[1].clientX - e.touches[0].clientX
+                );
+                return angle * (180 / Math.PI);
             }
 
-            initialDistance = calculateDistance(e.touches);
-            initialAngle = calculateAngle(e.touches);
+            if (initialDistance === null) {
+                initialDistance = calculateDistance(e);
+                initialAngle = calculateAngle(e);
+            } else {
+                const currentDistance = calculateDistance(e);
+                const currentAngle = calculateAngle(e);
+                const scale = currentDistance / initialDistance;
+                const rotation = currentAngle - initialAngle;
+
+                element.style.width = initialWidth * scale + 'px';
+                element.style.height = initialHeight * scale + 'px';
+                element.style.transform = `rotate(${rotation}deg)`;
+            }
 
             function onPinchMove(e) {
-                if (e.touches.length < 2) return;
+                if (e.touches.length === 2) {
+                    const currentDistance = calculateDistance(e);
+                    const currentAngle = calculateAngle(e);
+                    const scale = currentDistance / initialDistance;
+                    const rotation = currentAngle - initialAngle;
 
-                const currentDistance = calculateDistance(e.touches);
-                const scale = currentDistance / initialDistance;
-
-                element.style.width = (initialWidth * scale) + 'px';
-                element.style.height = (initialHeight * scale) + 'px';
-
-                const currentAngle = calculateAngle(e.touches);
-                const rotation = initialRotation + (currentAngle - initialAngle);
-
-                element.style.transform = `rotate(${rotation}deg)`;
-                element.setAttribute('data-rotation', rotation);
+                    element.style.width = initialWidth * scale + 'px';
+                    element.style.height = initialHeight * scale + 'px';
+                    element.style.transform = `rotate(${rotation}deg)`;
+                }
             }
 
             function onPinchEnd() {
                 document.removeEventListener('touchmove', onPinchMove);
                 document.removeEventListener('touchend', onPinchEnd);
+                initialDistance = null;
             }
 
             document.addEventListener('touchmove', onPinchMove);
@@ -324,54 +294,89 @@
         }
 
         function checkOverlap(element) {
-            const sphere = document.getElementById('sphere').getBoundingClientRect();
-            const item = element.getBoundingClientRect();
+            const sphere = document.getElementById('sphere');
+            const sphereRect = sphere.getBoundingClientRect();
+            const elementRect = element.getBoundingClientRect();
 
-            if (!(item.right < sphere.left ||
-                  item.left > sphere.right ||
-                  item.bottom < sphere.top ||
-                  item.top > sphere.bottom)) {
-                element.style.opacity = 0;
+            if (elementRect.left < sphereRect.right &&
+                elementRect.right > sphereRect.left &&
+                elementRect.top < sphereRect.bottom &&
+                elementRect.bottom > sphereRect.top) {
+                sphere.style.opacity = 0.5;
+                element.remove();
             } else {
-                element.style.opacity = 1;
+                sphere.style.opacity = 1;
             }
         }
 
-        const captureButton = document.getElementById('capture-button');
-        captureButton.addEventListener('click', function() {
+        document.getElementById('capture-button').addEventListener('click', captureScreenshot);
+
+        function captureScreenshot() {
             const video = document.getElementById('video');
             const canvas = document.getElementById('canvas');
             const ctx = canvas.getContext('2d');
 
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+            // 캔버스 크기를 비디오의 실제 해상도로 설정
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
 
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-            document.querySelectorAll('.draggable').forEach((item) => {
-                const { x, y, width, height } = item.getBoundingClientRect();
-                const rotation = parseFloat(item.getAttribute('data-rotation')) || 0;
+            // 화면 비율 계산
+            const scaleX = canvas.width / window.innerWidth;
+            const scaleY = canvas.height / window.innerHeight;
+
+            document.querySelectorAll('.draggable').forEach((img) => {
+                // 화면의 실제 위치와 크기를 비디오의 실제 해상도에 맞춰 계산
+                const imgWidth = img.clientWidth * scaleX;
+                const imgHeight = img.clientHeight * scaleY;
+                const imgX = img.offsetLeft * scaleX;
+                const imgY = img.offsetTop * scaleY;
+               // 이미지 회전 값 가져오기
+                const transform = window.getComputedStyle(img).transform;
+                let angle = 0;
+
+                if (transform !== 'none') {
+                    const values = transform.split('(')[1].split(')')[0].split(',');
+                    const a = values[0];
+                    const b = values[1];
+                    angle = Math.round(Math.atan2(b, a) * (180 / Math.PI));
+                }
 
                 ctx.save();
-                ctx.translate(x + width / 2, y + height / 2);
-                ctx.rotate(rotation * Math.PI / 180);
-                ctx.drawImage(item, -width / 2, -height / 2, width, height);
+                ctx.translate(imgX + imgWidth / 2, imgY + imgHeight / 2); // 이미지의 중심으로 이동
+                ctx.rotate(angle * Math.PI / 180); // 회전 적용
+                ctx.drawImage(img, -imgWidth / 2, -imgHeight / 2, imgWidth, imgHeight); // 중심 기준으로 이미지 그림
                 ctx.restore();
             });
 
             const dataUrl = canvas.toDataURL('image/png');
-            document.getElementById('preview-image').src = dataUrl;
-            document.getElementById('preview-container').style.display = 'block';
+            showPreview(dataUrl);
+        }
 
-            document.getElementById('preview-image').onclick = function() {
-                document.getElementById('fullsize-image-img').src = dataUrl;
-                document.getElementById('fullsize-image').style.display = 'flex';
-            };
+        function showPreview(dataUrl) {
+            const previewImage = document.getElementById('preview-image');
+            const previewContainer = document.getElementById('preview-container');
 
-            document.getElementById('fullsize-image').onclick = function() {
-                document.getElementById('fullsize-image').style.display = 'none';
+            previewImage.src = dataUrl;
+            previewContainer.style.display = 'block';
+
+            previewImage.onclick = function() {
+                showFullSizeImage(dataUrl);
             };
-        });
+        }
+
+        function showFullSizeImage(dataUrl) {
+            const fullSizeContainer = document.getElementById('fullsize-image');
+            const fullSizeImage = document.getElementById('fullsize-image-img');
+
+            fullSizeImage.src = dataUrl;
+            fullSizeContainer.style.display = 'flex';
+
+            fullSizeImage.onclick = function() {
+                fullSizeContainer.style.display = 'none';
+            };
+        }
     </script>
 </body>
 </html>
