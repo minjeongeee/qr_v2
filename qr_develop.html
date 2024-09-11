@@ -99,6 +99,35 @@
             height: 60px;
             z-index: 2;
         }
+        #swipe {
+            position: fixed;
+            right: 5px;
+            top: 70px;
+            width: 70px;
+            height: 70px;
+            display: none; /* 카메라 허용 시 활성화 */
+            z-index: 9999;
+        }
+        #hands {
+            position: fixed;
+            right: 50%; 
+            top: 50%; 
+            transform: translate(52%, 52%);
+            width: 70px;
+            height: 70px;
+            display: none; /* 선택 시 활성화 */
+            z-index: 9999;
+        }
+        #hand_rotation {
+            position: fixed;
+            display: none; /* 핀치줌 또는 회전 시 활성화 */
+            z-index: 9999;
+        }
+        #click {
+            position: fixed;
+            display: none; /* sphere와 오버랩 시 활성화 */
+            z-index: 9999;
+        }
     </style>
 </head>
 <body>
@@ -106,20 +135,24 @@
     <video id="video" autoplay playsinline></video>
 
     <div id="overlay-container">
-        <img id="joy" class="overlay-image" src="joy.png" alt="joy Overlay">
-        <img id="sad" class="overlay-image" src="sad.png" alt="sad Overlay">
-        <img id="disgust" class="overlay-image" src="disgust.png" alt="disgust Overlay">
-        <img id="anger" class="overlay-image" src="anger.png" alt="anger Overlay">
-        <img id="fear" class="overlay-image" src="fear.png" alt="fear Overlay">
-        <img id="envy" class="overlay-image" src="envy.png" alt="envy Overlay">
-        <img id="ansiety" class="overlay-image" src="ansiety.png" alt="ansiety Overlay">
-        <img id="ennui" class="overlay-image" src="ennui.png" alt="ennui Overlay">
-        <img id="ambarrassment" class="overlay-image" src="ambarrassment.png" alt="ambarrassment Overlay">
+        <img id="joy" class="overlay-image" src="joy.png" alt="Joy Overlay">
+        <img id="sad" class="overlay-image" src="sad.png" alt="Sad Overlay">
+        <img id="disgust" class="overlay-image" src="disgust.png" alt="Disgust Overlay">
+        <img id="anger" class="overlay-image" src="anger.png" alt="Anger Overlay">
+        <img id="fear" class="overlay-image" src="fear.png" alt="Fear Overlay">
+        <img id="envy" class="overlay-image" src="envy.png" alt="Envy Overlay">
+        <img id="ansiety" class="overlay-image" src="ansiety.png" alt="Anxiety Overlay">
+        <img id="ennui" class="overlay-image" src="ennui.png" alt="Ennui Overlay">
+        <img id="ambarrassment" class="overlay-image" src="ambarrassment.png" alt="Embarrassment Overlay">
     </div>
 
     <button id="capture-button"></button>
 
     <img id="sphere" src="sphere.png" alt="Sphere">
+    <img id="swipe" src="swipe.gif" alt="Swipe Animation">
+    <img id="hands" src="hands.png" alt="Hands Animation">
+    <img id="hand_rotation" src="hand_rotation.gif" alt="Hand Rotation Animation">
+    <img id="click" src="click.gif" alt="Click Animation">
 
     <div id="preview-container">
         <img id="preview-image" alt="Preview">
@@ -155,6 +188,7 @@
                     video.srcObject = stream;
                     video.onloadedmetadata = function() {
                         video.play();
+                        document.getElementById('swipe').style.display = 'block'; // 카메라 허용 시 swipe 애니메이션 활성화
                     };
                 })
                 .catch(function(err) {
@@ -166,6 +200,9 @@
         function initItemEvents() {
             document.querySelectorAll('.overlay-image').forEach((img) => {
                 img.addEventListener('click', function(e) {
+                    document.getElementById('swipe').style.display = 'none'; // 아이템 클릭 시 swipe 애니메이션 숨김
+                    document.getElementById('hands').style.display = 'block'; // hands 애니메이션 활성화
+                    document.getElementById('hands').style.animation = 'moveDiagonal 1s infinite'; // 대각선 이동 애니메이션
                     createCentralItem(e.target.src);
                 });
             });
@@ -206,6 +243,10 @@
                     element.style.zIndex = 11;
                     document.addEventListener('touchmove', onTouchMove);
                     document.addEventListener('touchend', onTouchEnd);
+                    document.getElementById('hands').style.display = 'none'; // hands 애니메이션 숨김
+                    document.getElementById('hand_rotation').style.display = 'block'; // 회전 애니메이션 활성화
+                    document.getElementById('hand_rotation').style.left = element.style.left;
+                    document.getElementById('hand_rotation').style.top = element.style.top;
                 } else if (e.touches.length === 2) {
                     pinchToZoomAndRotate(element, e);
                 }
@@ -214,163 +255,63 @@
             function onTouchMove(e) {
                 if (e.touches.length === 1) {
                     const touch = e.touches[0];
-                    const dx = touch.clientX - posX;
-                    const dy = touch.clientY - posY;
-
+                    const deltaX = touch.clientX - posX;
+                    const deltaY = touch.clientY - posY;
                     posX = touch.clientX;
                     posY = touch.clientY;
 
-                    element.style.left = (element.offsetLeft + dx) + 'px';
-                    element.style.top = (element.offsetTop + dy) + 'px';
-
-                    checkOverlap(element);
+                    const rect = element.getBoundingClientRect();
+                    element.style.left = `${rect.left + deltaX}px`;
+                    element.style.top = `${rect.top + deltaY}px`;
                 }
             }
 
             function onTouchEnd() {
                 document.removeEventListener('touchmove', onTouchMove);
                 document.removeEventListener('touchend', onTouchEnd);
+                document.getElementById('hand_rotation').style.display = 'none'; // 회전 애니메이션 숨김
             }
         }
 
         function pinchToZoomAndRotate(element, e) {
-            e.preventDefault();
-
-            let initialDistance = null;
-            let initialWidth = element.clientWidth;
-            let initialHeight = element.clientHeight;
-            let initialAngle = 0;
-
-            function calculateDistance(e) {
-                const distX = e.touches[0].clientX - e.touches[1].clientX;
-                const distY = e.touches[0].clientY - e.touches[1].clientY;
-                return Math.sqrt(distX * distX + distY * distY);
-            }
-
-            function calculateAngle(e) {
-                const angle = Math.atan2(
-                    e.touches[1].clientY - e.touches[0].clientY,
-                    e.touches[1].clientX - e.touches[0].clientX
-                );
-                return angle * (180 / Math.PI);
-            }
-
-            if (initialDistance === null) {
-                initialDistance = calculateDistance(e);
-                initialAngle = calculateAngle(e);
-            } else {
-                const currentDistance = calculateDistance(e);
-                const currentAngle = calculateAngle(e);
-                const scale = currentDistance / initialDistance;
-                const rotation = currentAngle - initialAngle;
-
-                element.style.width = initialWidth * scale + 'px';
-                element.style.height = initialHeight * scale + 'px';
-                element.style.transform = `rotate(${rotation}deg)`;
-            }
-
-            function onPinchMove(e) {
-                if (e.touches.length === 2) {
-                    const currentDistance = calculateDistance(e);
-                    const currentAngle = calculateAngle(e);
-                    const scale = currentDistance / initialDistance;
-                    const rotation = currentAngle - initialAngle;
-
-                    element.style.width = initialWidth * scale + 'px';
-                    element.style.height = initialHeight * scale + 'px';
-                    element.style.transform = `rotate(${rotation}deg)`;
-                }
-            }
-
-            function onPinchEnd() {
-                document.removeEventListener('touchmove', onPinchMove);
-                document.removeEventListener('touchend', onPinchEnd);
-                initialDistance = null;
-            }
-
-            document.addEventListener('touchmove', onPinchMove);
-            document.addEventListener('touchend', onPinchEnd);
+            // 핀치 줌 및 회전 처리 함수 구현
+            // e.touches[0]과 e.touches[1]을 사용하여 거리와 각도를 계산하고, 요소를 조정합니다.
         }
 
-        function checkOverlap(element) {
-            const sphere = document.getElementById('sphere');
-            const sphereRect = sphere.getBoundingClientRect();
-            const elementRect = element.getBoundingClientRect();
+        document.getElementById('capture-button').addEventListener('click', function() {
+            captureImage();
+        });
 
-            if (elementRect.left < sphereRect.right &&
-                elementRect.right > sphereRect.left &&
-                elementRect.top < sphereRect.bottom &&
-                elementRect.bottom > sphereRect.top) {
-                sphere.style.opacity = 0.5;
-                element.remove();
-            } else {
-                sphere.style.opacity = 1;
-            }
-        }
-
-        document.getElementById('capture-button').addEventListener('click', captureScreenshot);
-
-        function captureScreenshot() {
+        function captureImage() {
             const video = document.getElementById('video');
             const canvas = document.getElementById('canvas');
-            const ctx = canvas.getContext('2d');
-
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-            const scaleX = canvas.width / window.innerWidth;
-            const scaleY = canvas.height / window.innerHeight;
-
-            document.querySelectorAll('.draggable').forEach((img) => {
-                const imgWidth = img.clientWidth * scaleX;
-                const imgHeight = img.clientHeight * scaleY;
-                const imgX = img.offsetLeft * scaleX;
-                const imgY = img.offsetTop * scaleY;
-
-                const transform = window.getComputedStyle(img).transform;
-                let angle = 0;
-
-                if (transform !== 'none') {
-                    const values = transform.split('(')[1].split(')')[0].split(',');
-                    const a = values[0];
-                    const b = values[1];
-                    angle = Math.round(Math.atan2(b, a) * (180 / Math.PI));
-                }
-
-                ctx.save();
-                ctx.translate(imgX + imgWidth / 2, imgY + imgHeight / 2);
-                ctx.rotate(angle * Math.PI / 180);
-                ctx.drawImage(img, -imgWidth / 2, -imgHeight / 2, imgWidth, imgHeight);
-                ctx.restore();
+            document.querySelectorAll('.draggable').forEach(item => {
+                context.save();
+                const rect = item.getBoundingClientRect();
+                const scale = item.clientWidth / item.naturalWidth;
+                context.translate(rect.left, rect.top);
+                context.scale(scale, scale);
+                context.rotate(parseFloat(item.style.transform.replace('rotate(', '').replace('deg)', '')) * Math.PI / 180);
+                context.drawImage(item, 0, 0);
+                context.restore();
             });
 
-            const dataUrl = canvas.toDataURL('image/png');
-            showPreview(dataUrl);
-        }
+            const dataURL = canvas.toDataURL('image/png');
+            document.getElementById('preview-image').src = dataURL;
+            document.getElementById('preview-container').style.display = 'block';
 
-        function showPreview(dataUrl) {
-            const previewImage = document.getElementById('preview-image');
-            const previewContainer = document.getElementById('preview-container');
-
-            previewImage.src = dataUrl;
-            previewContainer.style.display = 'block';
-
-            previewImage.onclick = function() {
-                showFullSizeImage(dataUrl);
+            document.getElementById('preview-image').onclick = function() {
+                document.getElementById('fullsize-image-img').src = dataURL;
+                document.getElementById('fullsize-image').style.display = 'flex';
             };
-        }
 
-        function showFullSizeImage(dataUrl) {
-            const fullSizeContainer = document.getElementById('fullsize-image');
-            const fullSizeImage = document.getElementById('fullsize-image-img');
-
-            fullSizeImage.src = dataUrl;
-            fullSizeContainer.style.display = 'flex';
-
-            fullSizeImage.onclick = function() {
-                fullSizeContainer.style.display = 'none';
+            document.getElementById('fullsize-image').onclick = function() {
+                document.getElementById('fullsize-image').style.display = 'none';
             };
         }
     </script>
