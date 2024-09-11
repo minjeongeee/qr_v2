@@ -99,6 +99,27 @@
             height: 60px;
             z-index: 2;
         }
+        .floating-image {
+            position: fixed;
+            z-index: 3;
+            height: 80px;
+        }
+        #swipe-image {
+            bottom: 0;
+            right: 5px;
+            display: none;
+        }
+        #hands-image {
+            right: 10px;
+            bottom: 10px;
+            display: none;
+        }
+        #hand-rotation-image {
+            display: none;
+        }
+        #click-image {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -129,6 +150,12 @@
         <img id="fullsize-image-img" alt="Full Size">
     </div>
 
+    <!-- Floating Images -->
+    <img id="swipe-image" class="floating-image" src="swipe.gif" alt="Swipe Image">
+    <img id="hands-image" class="floating-image" src="hands.png" alt="Hands Image">
+    <img id="hand-rotation-image" class="floating-image" src="hand_rotation.gif" alt="Hand Rotation Image">
+    <img id="click-image" class="floating-image" src="click.gif" alt="Click Image">
+
     <canvas id="canvas" style="display: none;"></canvas>
 
     <script>
@@ -137,6 +164,7 @@
         window.onload = function() {
             startCamera();
             initItemEvents();
+            showSwipeImage();
         };
 
         function startCamera() {
@@ -167,6 +195,8 @@
             document.querySelectorAll('.overlay-image').forEach((img) => {
                 img.addEventListener('click', function(e) {
                     createCentralItem(e.target.src);
+                    hideSwipeImage();
+                    showHandsImage();
                 });
             });
         }
@@ -177,14 +207,13 @@
             newImage.className = 'draggable';
 
             newImage.onload = function () {
-                const aspectRatio = newImage.naturalWidth / newImage.naturalHeight; // 이미지의 원본 비율
-                const initialWidth = 100; // 원하는 초기 너비 (100px)
-                const initialHeight = initialWidth / aspectRatio; // 원본 비율에 따른 높이 계산
+                const aspectRatio = newImage.naturalWidth / newImage.naturalHeight; 
+                const initialWidth = 100; 
+                const initialHeight = initialWidth / aspectRatio; 
 
                 newImage.style.width = initialWidth + 'px';
                 newImage.style.height = initialHeight + 'px';
 
-                // 화면 중앙에 위치시키기
                 const x = (window.innerWidth - initialWidth) / 2;
                 const y = (window.innerHeight - initialHeight) / 2;
                 newImage.style.left = `${x}px`;
@@ -192,6 +221,9 @@
 
                 document.body.appendChild(newImage);
                 initDraggable(newImage);
+
+                // Remove hands image when dragging starts
+                newImage.addEventListener('mousedown', () => hideHandsImage());
             };
         }
 
@@ -249,48 +281,37 @@
             }
 
             function calculateAngle(e) {
-                const angle = Math.atan2(
-                    e.touches[1].clientY - e.touches[0].clientY,
-                    e.touches[1].clientX - e.touches[0].clientX
-                );
-                return angle * (180 / Math.PI);
-            }
-
-            if (initialDistance === null) {
-                initialDistance = calculateDistance(e);
-                initialAngle = calculateAngle(e);
-            } else {
-                const currentDistance = calculateDistance(e);
-                const currentAngle = calculateAngle(e);
-                const scale = currentDistance / initialDistance;
-                const rotation = currentAngle - initialAngle;
-
-                element.style.width = initialWidth * scale + 'px';
-                element.style.height = initialHeight * scale + 'px';
-                element.style.transform = `rotate(${rotation}deg)`;
-            }
-
-            function onPinchMove(e) {
-                if (e.touches.length === 2) {
-                    const currentDistance = calculateDistance(e);
-                    const currentAngle = calculateAngle(e);
-                    const scale = currentDistance / initialDistance;
-                    const rotation = currentAngle - initialAngle;
-
-                    element.style.width = initialWidth * scale + 'px';
-                    element.style.height = initialHeight * scale + 'px';
-                    element.style.transform = `rotate(${rotation}deg)`;
-                }
-            }
-
-            function onPinchEnd() {
-                document.removeEventListener('touchmove', onPinchMove);
-                document.removeEventListener('touchend', onPinchEnd);
-                initialDistance = null;
+                const dx = e.touches[1].clientX - e.touches[0].clientX;
+                const dy = e.touches[1].clientY - e.touches[0].clientY;
+                return Math.atan2(dy, dx) * (180 / Math.PI);
             }
 
             document.addEventListener('touchmove', onPinchMove);
             document.addEventListener('touchend', onPinchEnd);
+
+            function onPinchMove(e) {
+                if (e.touches.length < 2) return;
+
+                const newDistance = calculateDistance(e);
+                const scale = newDistance / initialDistance;
+                element.style.width = (initialWidth * scale) + 'px';
+                element.style.height = (initialHeight * scale) + 'px';
+
+                const newAngle = calculateAngle(e);
+                const deltaAngle = newAngle - initialAngle;
+                element.style.transform = `rotate(${deltaAngle}deg)`;
+
+                showHandRotationImage();
+            }
+
+            function onPinchEnd(e) {
+                document.removeEventListener('touchmove', onPinchMove);
+                document.removeEventListener('touchend', onPinchEnd);
+                hideHandRotationImage();
+            }
+
+            initialDistance = calculateDistance(e);
+            initialAngle = calculateAngle(e);
         }
 
         function checkOverlap(element) {
@@ -298,85 +319,91 @@
             const sphereRect = sphere.getBoundingClientRect();
             const elementRect = element.getBoundingClientRect();
 
-            if (elementRect.left < sphereRect.right &&
-                elementRect.right > sphereRect.left &&
-                elementRect.top < sphereRect.bottom &&
-                elementRect.bottom > sphereRect.top) {
-                sphere.style.opacity = 0.5;
-                element.remove();
+            if (elementRect.right < sphereRect.left || elementRect.left > sphereRect.right ||
+                elementRect.bottom < sphereRect.top || elementRect.top > sphereRect.bottom) {
+                element.style.display = 'block';
             } else {
-                sphere.style.opacity = 1;
+                element.style.display = 'none';
             }
         }
 
-        document.getElementById('capture-button').addEventListener('click', captureScreenshot);
+        function showSwipeImage() {
+            const swipeImage = document.getElementById('swipe-image');
+            swipeImage.style.display = 'block';
+        }
 
-        function captureScreenshot() {
+        function hideSwipeImage() {
+            const swipeImage = document.getElementById('swipe-image');
+            swipeImage.style.display = 'none';
+        }
+
+        function showHandsImage() {
+            const handsImage = document.getElementById('hands-image');
+            handsImage.style.display = 'block';
+        }
+
+        function hideHandsImage() {
+            const handsImage = document.getElementById('hands-image');
+            handsImage.style.display = 'none';
+        }
+
+        function showHandRotationImage() {
+            const handRotationImage = document.getElementById('hand-rotation-image');
+            handRotationImage.style.display = 'block';
+        }
+
+        function hideHandRotationImage() {
+            const handRotationImage = document.getElementById('hand-rotation-image');
+            handRotationImage.style.display = 'none';
+        }
+
+        function showClickImage() {
+            const clickImage = document.getElementById('click-image');
+            clickImage.style.display = 'block';
+        }
+
+        function hideClickImage() {
+            const clickImage = document.getElementById('click-image');
+            clickImage.style.display = 'none';
+        }
+
+        const captureButton = document.getElementById('capture-button');
+        const previewContainer = document.getElementById('preview-container');
+        const previewImage = document.getElementById('preview-image');
+        const fullsizeContainer = document.getElementById('fullsize-image');
+        const fullsizeImage = document.getElementById('fullsize-image-img');
+
+        captureButton.addEventListener('click', function () {
             const video = document.getElementById('video');
             const canvas = document.getElementById('canvas');
-            const ctx = canvas.getContext('2d');
-
-            // 캔버스 크기를 비디오의 실제 해상도로 설정
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-            // 화면 비율 계산
-            const scaleX = canvas.width / window.innerWidth;
-            const scaleY = canvas.height / window.innerHeight;
-
-            document.querySelectorAll('.draggable').forEach((img) => {
-                // 화면의 실제 위치와 크기를 비디오의 실제 해상도에 맞춰 계산
-                const imgWidth = img.clientWidth * scaleX;
-                const imgHeight = img.clientHeight * scaleY;
-                const imgX = img.offsetLeft * scaleX;
-                const imgY = img.offsetTop * scaleY;
-               // 이미지 회전 값 가져오기
-                const transform = window.getComputedStyle(img).transform;
-                let angle = 0;
-
-                if (transform !== 'none') {
-                    const values = transform.split('(')[1].split(')')[0].split(',');
-                    const a = values[0];
-                    const b = values[1];
-                    angle = Math.round(Math.atan2(b, a) * (180 / Math.PI));
-                }
-
-                ctx.save();
-                ctx.translate(imgX + imgWidth / 2, imgY + imgHeight / 2); // 이미지의 중심으로 이동
-                ctx.rotate(angle * Math.PI / 180); // 회전 적용
-                ctx.drawImage(img, -imgWidth / 2, -imgHeight / 2, imgWidth, imgHeight); // 중심 기준으로 이미지 그림
-                ctx.restore();
+            document.querySelectorAll('.draggable').forEach(function (img) {
+                const imgRect = img.getBoundingClientRect();
+                const scaleX = canvas.width / window.innerWidth;
+                const scaleY = canvas.height / window.innerHeight;
+                context.drawImage(img, imgRect.left * scaleX, imgRect.top * scaleY, imgRect.width * scaleX, imgRect.height * scaleY);
             });
 
-            const dataUrl = canvas.toDataURL('image/png');
-            showPreview(dataUrl);
-        }
-
-        function showPreview(dataUrl) {
-            const previewImage = document.getElementById('preview-image');
-            const previewContainer = document.getElementById('preview-container');
-
-            previewImage.src = dataUrl;
+            const dataURL = canvas.toDataURL();
+            previewImage.src = dataURL;
             previewContainer.style.display = 'block';
 
-            previewImage.onclick = function() {
-                showFullSizeImage(dataUrl);
-            };
-        }
+            hideClickImage();  // Hide click.gif after capturing
+        });
 
-        function showFullSizeImage(dataUrl) {
-            const fullSizeContainer = document.getElementById('fullsize-image');
-            const fullSizeImage = document.getElementById('fullsize-image-img');
+        previewImage.addEventListener('click', function () {
+            fullsizeImage.src = previewImage.src;
+            fullsizeContainer.style.display = 'flex';
+        });
 
-            fullSizeImage.src = dataUrl;
-            fullSizeContainer.style.display = 'flex';
+        fullsizeContainer.addEventListener('click', function () {
+            fullsizeContainer.style.display = 'none';
+        });
 
-            fullSizeImage.onclick = function() {
-                fullSizeContainer.style.display = 'none';
-            };
-        }
     </script>
 </body>
 </html>
