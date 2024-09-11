@@ -10,18 +10,6 @@
             padding: 0;
             overflow: hidden;
         }
-        #gif-intro_V2 {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            z-index: 9999;
-        }
-        #video, #overlay-container, #capture-button, #sphere, #preview-container {
-            display: none;
-        }
         #video {
             position: fixed;
             top: 0;
@@ -115,9 +103,6 @@
 </head>
 <body>
 
-    <!-- GIF Intro -->
-    <img id="gif-intro_V2" src="intro_V2.gif" alt="Intro_V2 GIF">
-
     <video id="video" autoplay playsinline></video>
 
     <div id="overlay-container">
@@ -147,15 +132,11 @@
     <canvas id="canvas" style="display: none;"></canvas>
 
     <script>
-        window.onload = function() {
-            const gifIntro = document.getElementById('gif-intro_V2');
+        let currentStream = null;
 
-            // 13초 후 GIF 숨기기 및 카메라 시작
-            setTimeout(function() {
-                gifIntro.style.display = 'none';  // GIF 숨기기
-                startCamera();  // 카메라 허용 팝업 표시 및 시작
-                showInterface();  // 나머지 인터페이스 표시
-            }, 13000);  // 13초 후 실행
+        window.onload = function() {
+            startCamera();
+            initItemEvents();
         };
 
         function startCamera() {
@@ -169,6 +150,7 @@
 
             navigator.mediaDevices.getUserMedia(constraints)
                 .then(function(stream) {
+                    currentStream = stream;
                     const video = document.getElementById('video');
                     video.srcObject = stream;
                     video.onloadedmetadata = function() {
@@ -180,16 +162,6 @@
                     alert("Could not access the camera. Please check your permissions.");
                 });
         }
-
-        function showInterface() {
-            document.getElementById('video').style.display = 'block';
-            document.getElementById('overlay-container').style.display = 'block';
-            document.getElementById('capture-button').style.display = 'block';
-            document.getElementById('sphere').style.display = 'block';
-        }
-
-        // (이후 코드에는 이벤트 처리 코드 등 기존의 코드를 이어서 사용)
-
 
         function initItemEvents() {
             document.querySelectorAll('.overlay-image').forEach((img) => {
