@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Interactive Camera with Resizable and Rotatable Items</title>
     <style>
-        /* 기존 스타일 유지 */
         body {
             margin: 0;
             padding: 0;
@@ -22,32 +21,25 @@
             z-index: 1;
         }
 
-        /* 추가된 스타일 */
         .animated-image {
             position: fixed;
             z-index: 9999; 
             width: auto;
             height: 80px;
+            display: none; /* 처음에 모든 애니메이션 이미지 숨김 */
         }
 
         #swipe {
             right: 5px;
             top: 70px;
+            display: none; /* 처음에 숨기지만 카메라 허용 시 활성화 */
         }
 
-        #hands {
+        #hands, #hand_rotation, #click {
             right: 50%; 
             top: 50%; 
             transform: translate(52%, 52%);
-            display: none;
-        }
-
-        #hand_rotation {
-            display: none;
-        }
-
-        #click {
-            display: none;
+            display: none; /* 다른 애니메이션 이미지들도 초기엔 숨김 */
         }
 
         /* 기타 기존 스타일 유지 */
@@ -56,7 +48,8 @@
 <body>
     <!-- 기존 HTML 코드 유지 -->
     <video id="video" autoplay playsinline></video>
-    <!-- 추가된 애니메이션 이미지들 -->
+
+    <!-- 애니메이션 이미지 -->
     <img id="swipe" class="animated-image" src="swipe.gif" alt="Swipe Animation">
     <img id="hands" class="animated-image" src="hands.png" alt="Hands Animation">
     <img id="hand_rotation" class="animated-image" src="hand_rotation.gif" alt="Hand Rotation Animation">
@@ -88,7 +81,7 @@
                     video.onloadedmetadata = function() {
                         video.play();
                     };
-                    document.getElementById('swipe').style.display = 'block'; // 1번 요구사항 구현
+                    document.getElementById('swipe').style.display = 'block'; // 카메라 허용 시 swipe 애니메이션 활성화
                 })
                 .catch(function(err) {
                     console.error("Error: " + err);
@@ -99,8 +92,8 @@
         function initItemEvents() {
             document.querySelectorAll('.overlay-image').forEach((img) => {
                 img.addEventListener('click', function(e) {
-                    document.getElementById('swipe').style.display = 'none'; // 2번 요구사항 구현
-                    document.getElementById('hands').style.display = 'block'; // 2번 요구사항 구현
+                    document.getElementById('swipe').style.display = 'none'; // 아이템 클릭 시 swipe 애니메이션 숨김
+                    document.getElementById('hands').style.display = 'block'; // hands 애니메이션 활성화
                     createCentralItem(e.target.src);
                 });
             });
@@ -130,7 +123,7 @@
         }
 
         function initDraggable(element) {
-            let posX = 0, posY = 0, initialRotation = 0;
+            let posX = 0, posY = 0;
             element.addEventListener('touchstart', function(e) {
                 if (e.touches.length === 1) {
                     const touch = e.touches[0];
@@ -140,7 +133,7 @@
                     element.style.zIndex = 11;
                     document.addEventListener('touchmove', onTouchMove);
                     document.addEventListener('touchend', onTouchEnd);
-                    document.getElementById('hands').style.display = 'none'; // 4번 요구사항 구현
+                    document.getElementById('hands').style.display = 'none'; // hands 애니메이션 숨김
                 } else if (e.touches.length === 2) {
                     pinchToZoomAndRotate(element, e);
                 }
@@ -221,7 +214,7 @@
                 document.removeEventListener('touchmove', onPinchMove);
                 document.removeEventListener('touchend', onPinchEnd);
                 initialDistance = null;
-                document.getElementById('hand_rotation').style.display = 'none'; // 6번 요구사항 구현
+                document.getElementById('hand_rotation').style.display = 'none'; // 회전 애니메이션 숨김
             }
 
             document.addEventListener('touchmove', onPinchMove);
@@ -239,8 +232,8 @@
                 elementRect.bottom > sphereRect.top) {
                 sphere.style.opacity = 0.5;
                 element.remove();
-                document.getElementById('hands').style.display = 'none'; // 7번 요구사항 구현
-                showClickAnimation(); // 클릭 애니메이션 표시
+                document.getElementById('hands').style.display = 'none';
+                showClickAnimation(); 
             } else {
                 sphere.style.opacity = 1;
             }
@@ -254,8 +247,6 @@
 
             setTimeout(() => click.style.display = 'none', 3000);
         }
-
-        // 애니메이션 초기화 및 기타 설정 유지
     </script>
 </body>
 </html>
