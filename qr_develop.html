@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Camera with Resizable and Rotatable Items</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        #video {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 1;
+        }
+        #capture-button {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2;
+            width: 60px;
+            height: 60px;
+            background: url('camera.png') no-repeat center center;
+            background-size: contain;
+            border: none;
+            cursor: pointer;
+        }
+        #overlay-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 80px;
+            overflow-x: auto;
+            overflow-y: hidden;
+            white-space: nowrap;
+            background-color: rgba(255, 255, 255, 0.5);
+            z-index: 2;
+            padding: 10px 0;
+        }
+        .overlay-image {
+            display: inline-block;
+            margin: 0 10px;
+            cursor: pointer;
+            touch-action: none;
+            height: 50px;
+            width: auto;
+        }
+        .draggable {
+            position: absolute;
+            touch-action: none;
+            z-index: 10;
+            transform-origin: center center;
+        }
+        #preview-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 2;
+            width: 100px;
+            height: 100px;
+            display: none;
+        }
+        #preview-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            cursor: pointer;
+        }
+        #fullsize-image {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        #fullsize-image img {
+            max-width: 90%;
+            max-height: 90%;
+            cursor: pointer;
+        }
+        #sphere {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 60px;
+            height: 60px;
+            z-index: 2;
+        }
+    </style>
+</head>
+<body>
+
+    <video id="video" autoplay playsinline></video>
+
+    <div id="overlay-container">
+        <img id="joy" class="overlay-image" src="joy.png" alt="joy Overlay">
+        <img id="sad" class="overlay-image" src="sad.png" alt="sad Overlay">
+        <img id="disgust" class="overlay-image" src="disgust.png" alt="disgust Overlay">
+        <img id="anger" class="overlay-image" src="anger.png" alt="anger Overlay">
+        <img id="fear" class="overlay-image" src="fear.png" alt="fear Overlay">
+        <img id="envy" class="overlay-image" src="envy.png" alt="envy Overlay">
+        <img id="ansiety" class="overlay-image" src="ansiety.png" alt="ansiety Overlay">
+        <img id="ennui" class="overlay-image" src="ennui.png" alt="ennui Overlay">
+        <img id="ambarrassment" class="overlay-image" src="ambarrassment.png" alt="ambarrassment Overlay">
+    </div>
+
+    <button id="capture-button"></button>
+
+    <img id="sphere" src="sphere.png" alt="Sphere">
+
+    <div id="preview-container">
+        <img id="preview-image" alt="Preview">
+    </div>
+
+    <div id="fullsize-image">
+        <img id="fullsize-image-img" alt="Full Size">
+    </div>
+
+    <canvas id="canvas" style="display: none;"></canvas>
+
+    <script>
+        let currentStream = null;
+
+        window.onload = function() {
+            startCamera();
+            initItemEvents();
+        };
+
+        function startCamera() {
+            const constraints = {
+                video: {
+                    facingMode: "environment",
+                    width: { ideal: 1920 },
+                    height: { ideal: 1080 }
+                }
+            };
+
+            navigator.mediaDevices.getUserMedia(constraints)
+                .then(function(stream) {
+                    currentStream = stream;
+                    const video = document.getElementById('video');
+                    video.srcObject = stream;
+                    video.onloadedmetadata = function() {
+                        video.play();
+                    };
+                })
+                .catch(function(err) {
+                    console.error("Error: " + err);
+                    alert("Could not access the camera. Please check your permissions.");
+                });
+        }
+
+        function initItemEvents() {
+            document.querySelectorAll('.overlay-image').forEach((img) => {
+                img.addEventListener('click', function(e) {
+                    createCentralItem(e.target.src);
+                });
+            });
+        }
+
+        function createCentralItem(src) {
+            const newImage = document.createElement('img');
+            newImage.src = src;
+            newImage.className = 'draggable';
+
+            newImage.onload = function () {
+                const aspectRatio = newImage.naturalWidth / newImage.naturalHeight; // 이미지의 원본 비율
+                const initialWidth = 100; // 원하는 초기 너비 (100px)
+                const initialHeight = initialWidth / aspectRatio; // 원본 비율에 따른 높이 계산
+
+                newImage.style.width = initialWidth + 'px';
+                newImage.style.height = initialHeight + 'px';
+
+                // 화면 중앙에 위치시키기
+                const x = (window.innerWidth - initialWidth) / 2;
+                const y = (window.innerHeight - initialHeight) / 2;
+                newImage.style.left = `${x}px`;
+                newImage.style.top = `${y}px`;
+
+                document.body.appendChild(newImage);
+                initDraggable(newImage);
+            };
+        }
+
+        function initDraggable(element) {
+            let posX = 0, posY = 0, initialRotation = 0;
+
+            element.addEventListener('touchstart', function(e) {
+                if (e.touches.length === 1) {
+                    const touch = e.touches[0];
+                    posX = touch.clientX;
+                    posY = touch.clientY;
+
+                    element.style.zIndex = 11; // Bring element to the front
+                    document.addEventListener('touchmove', onTouchMove);
+                    document.addEventListener('touchend', onTouchEnd);
+                } else if (e.touches.length === 2) {
+                    pinchToZoomAndRotate(element, e);
+                }
+            });
+
+            function onTouchMove(e) {
+                if (e.touches.length === 1) {
+                    const touch = e.touches[0];
+                    const dx = touch.clientX - posX;
+                    const dy = touch.clientY - posY;
+
+                    posX = touch.clientX;
+                    posY = touch.clientY;
+
+                    element.style.left = (element.offsetLeft + dx) + 'px';
+                    element.style.top = (element.offsetTop + dy) + 'px';
+
+                    checkOverlap(element);
+                }
+            }
+
+            function onTouchEnd() {
+                document.removeEventListener('touchmove', onTouchMove);
+                document.removeEventListener('touchend', onTouchEnd);
+            }
+        }
+
+        function pinchToZoomAndRotate(element, e) {
+            e.preventDefault();
+
+            let initialDistance = null;
+            let initialWidth = element.clientWidth;
+            let initialHeight = element.clientHeight;
+            let initialAngle = 0;
+
+            function calculateDistance(e) {
+                const distX = e.touches[0].clientX - e.touches[1].clientX;
+                const distY = e.touches[0].clientY - e.touches[1].clientY;
+                return Math.sqrt(distX * distX + distY * distY);
+            }
+
+            function calculateAngle(e) {
+                const angle = Math.atan2(
+                    e.touches[1].clientY - e.touches[0].clientY,
+                    e.touches[1].clientX - e.touches[0].clientX
+                );
+                return angle * (180 / Math.PI);
+            }
+
+            if (initialDistance === null) {
+                initialDistance = calculateDistance(e);
+                initialAngle = calculateAngle(e);
+            } else {
+                const currentDistance = calculateDistance(e);
+                const currentAngle = calculateAngle(e);
+                const scale = currentDistance / initialDistance;
+                const rotation = currentAngle - initialAngle;
+
+                element.style.width = initialWidth * scale + 'px';
+                element.style.height = initialHeight * scale + 'px';
+                element.style.transform = `rotate(${rotation}deg)`;
+            }
+
+            function onPinchMove(e) {
+                if (e.touches.length === 2) {
+                    const currentDistance = calculateDistance(e);
+                    const currentAngle = calculateAngle(e);
+                    const scale = currentDistance / initialDistance;
+                    const rotation = currentAngle - initialAngle;
+
+                    element.style.width = initialWidth * scale + 'px';
+                    element.style.height = initialHeight * scale + 'px';
+                    element.style.transform = `rotate(${rotation}deg)`;
+                }
+            }
+
+            function onPinchEnd() {
+                document.removeEventListener('touchmove', onPinchMove);
+                document.removeEventListener('touchend', onPinchEnd);
+                initialDistance = null;
+            }
+
+            document.addEventListener('touchmove', onPinchMove);
+            document.addEventListener('touchend', onPinchEnd);
+        }
+
+        function checkOverlap(element) {
+            const sphere = document.getElementById('sphere');
+            const sphereRect = sphere.getBoundingClientRect();
+            const elementRect = element.getBoundingClientRect();
+
+            if (elementRect.left < sphereRect.right &&
+                elementRect.right > sphereRect.left &&
+                elementRect.top < sphereRect.bottom &&
+                elementRect.bottom > sphereRect.top) {
+                sphere.style.opacity = 0.5;
+                element.remove();
+            } else {
+                sphere.style.opacity = 1;
+            }
+        }
+
+        document.getElementById('capture-button').addEventListener('click', captureScreenshot);
+
+        function captureScreenshot() {
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+
+            // 캔버스 크기를 비디오의 실제 해상도로 설정
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // 화면 비율 계산
+            const scaleX = canvas.width / window.innerWidth;
+            const scaleY = canvas.height / window.innerHeight;
+
+            document.querySelectorAll('.draggable').forEach((img) => {
+                // 화면의 실제 위치와 크기를 비디오의 실제 해상도에 맞춰 계산
+                const imgWidth = img.clientWidth * scaleX;
+                const imgHeight = img.clientHeight * scaleY;
+                const imgX = img.offsetLeft * scaleX;
+                const imgY = img.offsetTop * scaleY;
+               // 이미지 회전 값 가져오기
+                const transform = window.getComputedStyle(img).transform;
+                let angle = 0;
+
+                if (transform !== 'none') {
+                    const values = transform.split('(')[1].split(')')[0].split(',');
+                    const a = values[0];
+                    const b = values[1];
+                    angle = Math.round(Math.atan2(b, a) * (180 / Math.PI));
+                }
+
+                ctx.save();
+                ctx.translate(imgX + imgWidth / 2, imgY + imgHeight / 2); // 이미지의 중심으로 이동
+                ctx.rotate(angle * Math.PI / 180); // 회전 적용
+                ctx.drawImage(img, -imgWidth / 2, -imgHeight / 2, imgWidth, imgHeight); // 중심 기준으로 이미지 그림
+                ctx.restore();
+            });
+
+            const dataUrl = canvas.toDataURL('image/png');
+            showPreview(dataUrl);
+        }
+
+        function showPreview(dataUrl) {
+            const previewImage = document.getElementById('preview-image');
+            const previewContainer = document.getElementById('preview-container');
+
+            previewImage.src = dataUrl;
+            previewContainer.style.display = 'block';
+
+            previewImage.onclick = function() {
+                showFullSizeImage(dataUrl);
+            };
+        }
+
+        function showFullSizeImage(dataUrl) {
+            const fullSizeContainer = document.getElementById('fullsize-image');
+            const fullSizeImage = document.getElementById('fullsize-image-img');
+
+            fullSizeImage.src = dataUrl;
+            fullSizeContainer.style.display = 'flex';
+
+            fullSizeImage.onclick = function() {
+                fullSizeContainer.style.display = 'none';
+            };
+        }
+    </script>
+</body>
+</html>
