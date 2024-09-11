@@ -40,7 +40,6 @@
             top: 50%; 
             transform: translate(52%, 52%);
             display: none; /* 선택 시 활성화 */
-            animation: moveDiagonal 1s infinite alternate; /* 대각선 애니메이션 */
         }
 
         #hand_rotation {
@@ -109,6 +108,7 @@
     <!-- 스크립트 -->
     <script>
         let currentStream = null;
+        let isDragging = false;
 
         window.onload = function() {
             startCamera();
@@ -132,7 +132,8 @@
                     video.onloadedmetadata = function() {
                         video.play();
                     };
-                    // 카메라 허용 후 swipe 애니메이션 활성화
+                    // 카메라 허용 후 기존 UI 및 swipe 애니메이션을 설정
+                    document.querySelectorAll('.overlay-image').forEach(img => img.style.display = 'block');
                     document.getElementById('swipe').style.display = 'block'; 
                 })
                 .catch(function(err) {
@@ -144,9 +145,11 @@
         function initItemEvents() {
             document.querySelectorAll('.overlay-image').forEach((img) => {
                 img.addEventListener('click', function(e) {
-                    document.getElementById('swipe').style.display = 'none'; // 아이템 클릭 시 swipe 애니메이션 숨김
-                    document.getElementById('hands').style.display = 'block'; // hands 애니메이션 활성화
-                    createCentralItem(e.target.src);
+                    if (!isDragging) {
+                        document.getElementById('swipe').style.display = 'none'; // 아이템 클릭 시 swipe 애니메이션 숨김
+                        document.getElementById('hands').style.display = 'block'; // hands 애니메이션 활성화
+                        createCentralItem(e.target.src);
+                    }
                 });
             });
         }
@@ -178,12 +181,14 @@
 
         function initDraggable(element) {
             let posX = 0, posY = 0;
+            let touchStartX = 0, touchStartY = 0;
+
             element.addEventListener('touchstart', function(e) {
                 if (e.touches.length === 1) {
-                    const touch = e.touches[0];
-                    posX = touch.clientX;
-                    posY = touch.clientY;
+                    touchStartX = e.touches[0].clientX;
+                    touchStartY = e.touches[0].clientY;
 
+                    isDragging = true;
                     element.style.zIndex = 11;
                     document.addEventListener('touchmove', onTouchMove);
                     document.addEventListener('touchend', onTouchEnd);
@@ -199,11 +204,11 @@
             function onTouchMove(e) {
                 if (e.touches.length === 1) {
                     const touch = e.touches[0];
-                    const dx = touch.clientX - posX;
-                    const dy = touch.clientY - posY;
+                    const dx = touch.clientX - touchStartX;
+                    const dy = touch.clientY - touchStartY;
 
-                    posX = touch.clientX;
-                    posY = touch.clientY;
+                    touchStartX = touch.clientX;
+                    touchStartY = touch.clientY;
 
                     element.style.left = (element.offsetLeft + dx) + 'px';
                     element.style.top = (element.offsetTop + dy) + 'px';
@@ -215,13 +220,13 @@
             function onTouchEnd() {
                 document.removeEventListener('touchmove', onTouchMove);
                 document.removeEventListener('touchend', onTouchEnd);
+                isDragging = false;
             }
         }
 
         function pinchToZoomAndRotate(element, e) {
             e.preventDefault();
             document.getElementById('hand_rotation').style.display = 'none'; // 핀치줌 또는 회전 시 hand_rotation 비활성화
-
             // 핀치줌/회전 로직 ...
         }
 
