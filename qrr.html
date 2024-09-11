@@ -332,8 +332,22 @@
                 const imgHeight = img.clientHeight * scaleY;
                 const imgX = img.offsetLeft * scaleX;
                 const imgY = img.offsetTop * scaleY;
+               // 이미지 회전 값 가져오기
+                const transform = window.getComputedStyle(img).transform;
+                let angle = 0;
 
-                ctx.drawImage(img, imgX, imgY, imgWidth, imgHeight);
+                if (transform !== 'none') {
+                    const values = transform.split('(')[1].split(')')[0].split(',');
+                    const a = values[0];
+                    const b = values[1];
+                    angle = Math.round(Math.atan2(b, a) * (180 / Math.PI));
+                }
+
+                ctx.save();
+                ctx.translate(imgX + imgWidth / 2, imgY + imgHeight / 2); // 이미지의 중심으로 이동
+                ctx.rotate(angle * Math.PI / 180); // 회전 적용
+                ctx.drawImage(img, -imgWidth / 2, -imgHeight / 2, imgWidth, imgHeight); // 중심 기준으로 이미지 그림
+                ctx.restore();
             });
 
             const dataUrl = canvas.toDataURL('image/png');
