@@ -18,6 +18,7 @@
             height: 100%;
             object-fit: cover;
             z-index: 1;
+            pointer-events: none; /* Allow clicks to pass through the video */
         }
         .flip-horizontal {
             transform: scaleX(-1);
@@ -214,18 +215,17 @@
             newImage.className = 'draggable';
 
             newImage.onload = function () {
-                const aspectRatio = newImage.naturalWidth / newImage.naturalHeight; // 이미지의 원본 비율
-                const initialWidth = 100; // 원하는 초기 너비 (100px)
-                const initialHeight = initialWidth / aspectRatio; // 원본 비율에 따른 높이 계산
+                const aspectRatio = newImage.naturalWidth / newImage.naturalHeight;
+                const initialWidth = 100;
+                const initialHeight = initialWidth / aspectRatio;
 
                 newImage.style.width = initialWidth + 'px';
                 newImage.style.height = initialHeight + 'px';
 
-                // 화면 중앙에 위치시키기
                 const x = (window.innerWidth - initialWidth) / 2;
                 const y = (window.innerHeight - initialHeight) / 2;
-                newImage.style.left = ${x}px;
-                newImage.style.top = ${y}px;
+                newImage.style.left = `${x}px`;
+                newImage.style.top = `${y}px`;
 
                 document.body.appendChild(newImage);
                 initDraggable(newImage);
@@ -233,7 +233,7 @@
         }
 
         function initDraggable(element) {
-            let posX = 0, posY = 0, initialRotation = 0;
+            let posX = 0, posY = 0;
 
             element.addEventListener('touchstart', function(e) {
                 if (e.touches.length === 1) {
@@ -241,7 +241,7 @@
                     posX = touch.clientX;
                     posY = touch.clientY;
 
-                    element.style.zIndex = 11; // Bring element to the front
+                    element.style.zIndex = 11;
                     document.addEventListener('touchmove', onTouchMove);
                     document.addEventListener('touchend', onTouchEnd);
                 } else if (e.touches.length === 2) {
@@ -285,135 +285,80 @@
                 return Math.sqrt(distX * distX + distY * distY);
             }
 
-            function calculateAngle(e) {
-                const angle = Math.atan2(
-                    e.touches[1].clientY - e.touches[0].clientY,
-                    e.touches[1].clientX - e.touches[0].clientX
-                );
-                return angle * (180 / Math.PI);
-            }
+            document.addEventListener('touchmove', function(e) {
+                if (initialDistance === null) {
+                    initialDistance = calculateDistance(e);
+                    return;
+                }
 
-            if (initialDistance === null) {
-                initialDistance = calculateDistance(e);
-                initialAngle = calculateAngle(e);
-            } else {
                 const currentDistance = calculateDistance(e);
-                const currentAngle = calculateAngle(e);
                 const scale = currentDistance / initialDistance;
-                const rotation = currentAngle - initialAngle;
+
+                const rect = element.getBoundingClientRect();
+                const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+                const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
 
                 element.style.width = initialWidth * scale + 'px';
                 element.style.height = initialHeight * scale + 'px';
-                element.style.transform = rotate(${rotation}deg);
-            }
 
-            function onPinchMove(e) {
-                if (e.touches.length === 2) {
-                    const currentDistance = calculateDistance(e);
-                    const currentAngle = calculateAngle(e);
-                    const scale = currentDistance / initialDistance;
-                    const rotation = currentAngle - initialAngle;
+                element.style.transformOrigin = `${centerX - rect.left}px ${centerY - rect.top}px`;
 
-                    element.style.width = initialWidth * scale + 'px';
-                    element.style.height = initialHeight * scale + 'px';
-                    element.style.transform = rotate(${rotation}deg);
-                }
-            }
+                const angle = Math.atan2(e.touches[1].clientY - e.touches[0].clientY, e.touches[1].clientX - e.touches[0].clientX) * (180 / Math.PI);
+                element.style.transform = `rotate(${angle - initialAngle}deg) scale(${scale})`;
 
-            function onPinchEnd() {
-                document.removeEventListener('touchmove', onPinchMove);
-                document.removeEventListener('touchend', onPinchEnd);
+                initialDistance = currentDistance;
+            });
+
+            document.addEventListener('touchend', function() {
                 initialDistance = null;
-            }
-
-            document.addEventListener('touchmove', onPinchMove);
-            document.addEventListener('touchend', onPinchEnd);
+                initialWidth = element.clientWidth;
+                initialHeight = element.clientHeight;
+            });
         }
 
         function checkOverlap(element) {
-            const sphere = document.getElementById('sphere');
-            const sphereRect = sphere.getBoundingClientRect();
-            const elementRect = element.getBoundingClientRect();
+            const rect = element.getBoundingClientRect();
+            const sphere = document.getElementById('sphere').getBoundingClientRect();
 
-            if (elementRect.left < sphereRect.right &&
-                elementRect.right > sphereRect.left &&
-                elementRect.top < sphereRect.bottom &&
-                elementRect.bottom > sphereRect.top) {
-                sphere.style.opacity = 0.5;
-                element.remove();
+            if (rect.left < sphere.right &&
+                rect.right > sphere.left &&
+                rect.top < sphere.bottom &&
+                rect.bottom > sphere.top) {
+                element.style.display = 'none';
             } else {
-                sphere.style.opacity = 1;
+                element.style.display = 'block';
             }
         }
 
-        document.getElementById('capture-button').addEventListener('click', captureScreenshot);
-
-        function captureScreenshot() {
-            const video = document.getElementById('video');
+        function captureScreen() {
             const canvas = document.getElementById('canvas');
-            const ctx = canvas.getContext('2d');
+            const context = canvas.getContext('2d');
+            const video = document.getElementById('video');
+            const previewImage = document.getElementById('preview-image');
 
-            // 캔버스 크기를 비디오의 실제 해상도로 설정
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-            // 화면 비율 계산
-            const scaleX = canvas.width / window.innerWidth;
-            const scaleY = canvas.height / window.innerHeight;
-
-            document.querySelectorAll('.draggable').forEach((img) => {
-                // 화면의 실제 위치와 크기를 비디오의 실제 해상도에 맞춰 계산
-                const imgWidth = img.clientWidth * scaleX;
-                const imgHeight = img.clientHeight * scaleY;
-                const imgX = img.offsetLeft * scaleX;
-                const imgY = img.offsetTop * scaleY;
-               // 이미지 회전 값 가져오기
-                const transform = window.getComputedStyle(img).transform;
-                let angle = 0;
-
-                if (transform !== 'none') {
-                    const values = transform.split('(')[1].split(')')[0].split(',');
-                    const a = values[0];
-                    const b = values[1];
-                    angle = Math.round(Math.atan2(b, a) * (180 / Math.PI));
-                }
-
-                ctx.save();
-                ctx.translate(imgX + imgWidth / 2, imgY + imgHeight / 2); // 이미지의 중심으로 이동
-                ctx.rotate(angle * Math.PI / 180); // 회전 적용
-                ctx.drawImage(img, -imgWidth / 2, -imgHeight / 2, imgWidth, imgHeight); // 중심 기준으로 이미지 그림
-                ctx.restore();
+            const items = document.querySelectorAll('.draggable');
+            items.forEach(item => {
+                context.drawImage(item, item.offsetLeft, item.offsetTop, item.clientWidth, item.clientHeight);
             });
 
-            const dataUrl = canvas.toDataURL('image/png');
-            showPreview(dataUrl);
+            previewImage.src = canvas.toDataURL();
+            document.getElementById('preview-container').style.display = 'block';
         }
 
-        function showPreview(dataUrl) {
-            const previewImage = document.getElementById('preview-image');
-            const previewContainer = document.getElementById('preview-container');
+        document.getElementById('capture-button').addEventListener('click', captureScreen);
 
-            previewImage.src = dataUrl;
-            previewContainer.style.display = 'block';
+        document.getElementById('preview-image').addEventListener('click', function() {
+            document.getElementById('fullsize-image-img').src = this.src;
+            document.getElementById('fullsize-image').style.display = 'flex';
+        });
 
-            previewImage.onclick = function() {
-                showFullSizeImage(dataUrl);
-            };
-        }
-
-        function showFullSizeImage(dataUrl) {
-            const fullSizeContainer = document.getElementById('fullsize-image');
-            const fullSizeImage = document.getElementById('fullsize-image-img');
-
-            fullSizeImage.src = dataUrl;
-            fullSizeContainer.style.display = 'flex';
-
-            fullSizeImage.onclick = function() {
-                fullSizeContainer.style.display = 'none';
-            };
-        }
+        document.getElementById('fullsize-image').addEventListener('click', function() {
+            this.style.display = 'none';
+        });
     </script>
 </body>
 </html>
