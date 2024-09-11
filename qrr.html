@@ -104,12 +104,14 @@
             z-index: 3;
         }
         #swipe-image {
-            left: 10px; /* 왼쪽 여백 */
-            top: 100px; /* UI 컨테이너 아래 10픽셀 */
+            position: fixed;
+            top: 90px; /* UI 컨테이너 아래 10픽셀 */
+            left: calc(100% - 112px); /* text 이미지 너비 + 2px 오른쪽 여백 */
         }
         #text-image {
-            right: 5px; /* 오른쪽 여백 */
-            top: 100px; /* UI 컨테이너 아래 10픽셀 */
+            position: fixed;
+            right: 2px; /* 오른쪽 여백 */
+            top: 90px; /* UI 컨테이너 아래 10픽셀 */
             transform: scale(0.5); /* 이미지 크기 50% */
         }
     </style>
@@ -199,20 +201,7 @@
         }
 
 
-        function positionImages() {
-            const textImage = document.getElementById('text-image');
-            const swipeImage = document.getElementById('swipe-image');
-
-            // text 이미지 위치 설정
-            textImage.style.position = 'absolute';
-            textImage.style.top = '90px'; // UI 컨테이너 바로 아래 10픽셀
-            textImage.style.right = '5px'; // 우측에 5픽셀 띄우기
-
-            // swipe 이미지 위치 설정 (text 이미지의 왼쪽에 붙이기)
-            swipeImage.style.position = 'absolute';
-            swipeImage.style.top = '90px'; // UI 컨테이너 바로 아래 10픽셀
-            swipeImage.style.right = `${textImage.offsetWidth + 10}px`; // text 이미지 왼쪽에 붙이기
-        }
+        
 
         function initItemEvents() {
             document.querySelectorAll('.overlay-image').forEach((img) => {
