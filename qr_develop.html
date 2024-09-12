@@ -115,10 +115,12 @@
             position: fixed;
             width: 70px;
             height: 70px;
-            bottom: 0;
+            top: 75px;
             right: 5px;
             z-index: 1000; /* Ensure it appears above other elements */
             display: none; /* Initially hidden */
+            background-color: rgba(255, 0, 0, 0.5); /* Temporary red background */
+            border: 2px solid blue; /* Temporary blue border */
         }
 
         @keyframes diagonalMove {
@@ -177,25 +179,34 @@
         function initSwipeImage() {
             const swipeImage = document.getElementById('swipe-image');
 
-            // Show swipe image when the camera access popup is allowed
-            if (navigator.permissions) {
-                navigator.permissions.query({ name: 'camera' }).then(result => {
-                    if (result.state === 'granted') {
-                        swipeImage.style.display = 'block';
-                    }
-                });
-            } else {
-                // For browsers that don't support Permissions API
-                swipeImage.style.display = 'block';
+            // Function to check and display swipe image
+            function checkPermissions() {
+                if (navigator.permissions) {
+                    navigator.permissions.query({ name: 'camera' }).then(result => {
+                        if (result.state === 'granted') {
+                            swipeImage.style.display = 'block';
+                        } else {
+                            swipeImage.style.display = 'none';
+                        }
+                    }).catch(() => {
+                        swipeImage.style.display = 'none'; // Handle errors
+                    });
+                } else {
+                    // For browsers that don't support Permissions API
+                    swipeImage.style.display = 'block';
+                }
             }
 
+            // Initial check
+            checkPermissions();
+
             // Hide swipe image when slider or items are interacted with
-            document.getElementById('overlay-container').addEventListener('scroll', function() {
+            document.getElementById('overlay-container').addEventListener('scroll', function () {
                 swipeImage.style.display = 'none';
             });
 
             document.querySelectorAll('.overlay-image').forEach((img) => {
-                img.addEventListener('click', function(e) {
+                img.addEventListener('click', function (e) {
                     swipeImage.style.display = 'none';
                 });
             });
