@@ -110,14 +110,17 @@
             z-index: 2;
         }
 
-        #hands {
+        #hands, #hand_rotation {
             position: fixed;
             width: 40px;
             height: 40px;
             z-index: 12;
             pointer-events: none;
             display: none; /* Initially hidden */
-            animation: verticalMove 2s linear infinite;
+        }
+
+        #hands {
+            animation: diagonalMove 2s linear infinite;
         }
 
         #swipe-image {
@@ -126,19 +129,45 @@
             right: 0px;
             width: 120px;
             height: 120px;
-            z-index: 12;
-            display: none;
+            z-index: 12; /* 카메라 위에 표시되도록 z-index를 높게 설정 */
+            display: none; /* 항상 보이도록 기본값을 block으로 설정 */
         }
 
-        @keyframes verticalMove {
+        #click-image {
+            position: fixed;
+            left: 50%;
+            top: 20px;
+            transform: translateX(-50%); /* Center the image horizontally */
+            width: 120px; /* Adjust width as needed */
+            height: 120px; /* Adjust height as needed */
+            z-index: 13; /* Higher than swipe-image */
+        }
+
+        #click-icon {
+            position: fixed;
+            bottom: 90px; /* Adjust the position */
+            left: 50%; /* Center it */
+            transform: translateX(-50%); /* Center it horizontally */
+            width: 70px; /* Adjust width */
+            height: 70px; /* Adjust height */
+            z-index: 13; /* Above other elements */
+            display: none; /* Initially hidden */
+        }
+
+        @keyframes diagonalMove {
             0% {
                 top: 80%;
+                left: 80%;
             }
+
             50% {
                 top: 50%;
+                left: 50%;
             }
+
             100% {
                 top: 80%;
+                left: 80%;
             }
         }
     </style>
@@ -166,6 +195,10 @@
     <img id="swipe-image" src="swipe.gif" alt="Swipe">
 
     <img id="hands" src="hands.png" alt="Hands Animation">
+    <img id="hand_rotation" src="hand_rotation.gif" alt="Hand Rotation Animation">
+
+    <img id="click-image" src="click.gif" alt="Click" style="display: none;">
+    <img id="click-icon" src="click.png" alt="Click Icon">
 
     <div id="preview-container">
         <img id="preview-image" alt="Preview">
@@ -188,6 +221,10 @@
 
         function initSwipeImage() {
             const swipeImage = document.getElementById('swipe-image');
+            const clickImage = document.getElementById('click-image'); // Add reference to click.gif
+            const clickIcon = document.getElementById('click-icon'); // Add reference to click.png
+
+            // Show swipe.gif initially
             swipeImage.style.display = 'block';
 
             if (navigator.permissions) {
@@ -199,12 +236,15 @@
             }
 
             document.getElementById('overlay-container').addEventListener('scroll', function () {
-                swipeImage.style.display = 'none';
+                swipeImage.style.display = 'none'; // Hide swipe.gif when the slider is scrolled
+                clickImage.style.display = 'block'; // Show click.gif when swipe.gif disappears
             });
 
             document.querySelectorAll('.overlay-image').forEach((img) => {
                 img.addEventListener('click', function (e) {
-                    swipeImage.style.display = 'none';
+                    swipeImage.style.display = 'none'; // Hide swipe.gif when an overlay image is clicked
+                    clickImage.style.display = 'none'; // Hide click.gif when an overlay image is clicked
+                    clickIcon.style.display = 'block'; // Show click.png when an overlay image is clicked
                 });
             });
         }
@@ -247,75 +287,38 @@
             newImage.className = 'draggable';
 
             newImage.onload = function () {
-                const aspectRatio = newImage.naturalWidth / newImage.naturalHeight;
-                const initialWidth = 100;
-                const initialHeight = initialWidth / aspectRatio;
-
-                newImage.style.width = initialWidth + 'px';
-                newImage.style.height = initialHeight + 'px';
-
-                const x = (window.innerWidth - initialWidth) / 2;
-                const y = (window.innerHeight - initialHeight) / 2;
-                newImage.style.left = `${x}px`;
-                newImage.style.top = `${y}px`;
-
-                document.body.appendChild(newImage);
-                initDraggable(newImage);
-
-                const hands = document.getElementById('hands');
-                if (!hands.classList.contains('used')) {
-                    hands.style.display = 'block';
-                    moveWithHands(newImage);
-                }
+                const aspectRatio = newImage.width / newImage.height;
+                newImage.style.width = '100px';
+                newImage.style.height = (100 / aspectRatio) + 'px';
+                newImage.style.left = 'calc(50% - 50px)';
+                newImage.style.top = 'calc(50% - ' + (100 / aspectRatio / 2) + 'px)';
             };
+
+            document.body.appendChild(newImage);
+            initDragResizeRotate(newImage);
         }
 
-        function moveWithHands(element) {
-            const hands = document.getElementById('hands');
-            hands.style.display = 'block';
-            hands.style.animationIterationCount = '2'; // 반복 횟수 설정
+        function initDragResizeRotate(el) {
+            el.addEventListener('pointerdown', (e) => {
+                let posX = e.clientX;
+                let posY = e.clientY;
+                let initialLeft = el.offsetLeft;
+                let initialTop = el.offsetTop;
 
-            let moveUp = true; // 위아래 이동을 위한 플래그
+                const onMove = (e) => {
+                    let dx = e.clientX - posX;
+                    let dy = e.clientY - posY;
+                    el.style.left = initialLeft + dx + 'px';
+                    el.style.top = initialTop + dy + 'px';
+                };
 
-            hands.addEventListener('animationiteration', () => {
-                const currentTop = parseFloat(element.style.top);
-                if (moveUp) {
-                    element.style.top = (currentTop - 30) + 'px'; // 위로 이동
-                } else {
-                    element.style.top = (currentTop + 30) + 'px'; // 아래로 이동
-                }
-                moveUp = !moveUp;
-            });
+                const onEnd = () => {
+                    document.removeEventListener('pointermove', onMove);
+                    document.removeEventListener('pointerup', onEnd);
+                };
 
-            hands.addEventListener('animationend', () => {
-                hands.style.display = 'none'; // hands.png 애니메이션이 끝나면 숨기기
-                element.style.animation = 'none'; // 캐릭터 멈추기
-            });
-        }
-
-        function initDraggable(element) {
-            let isDragging = false;
-            let startX, startY, initialLeft, initialTop;
-
-            element.addEventListener('mousedown', function (e) {
-                isDragging = true;
-                startX = e.clientX;
-                startY = e.clientY;
-                initialLeft = parseInt(element.style.left);
-                initialTop = parseInt(element.style.top);
-            });
-
-            document.addEventListener('mousemove', function (e) {
-                if (isDragging) {
-                    const dx = e.clientX - startX;
-                    const dy = e.clientY - startY;
-                    element.style.left = initialLeft + dx + 'px';
-                    element.style.top = initialTop + dy + 'px';
-                }
-            });
-
-            document.addEventListener('mouseup', function () {
-                isDragging = false;
+                document.addEventListener('pointermove', onMove);
+                document.addEventListener('pointerup', onEnd);
             });
         }
     </script>
