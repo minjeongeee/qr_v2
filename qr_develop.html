@@ -209,8 +209,8 @@
 
         function initSwipeImage() {
             const swipeImage = document.getElementById('swipe-image');
-            const clickImage = document.getElementById('click-image');
-            let clickShown = false;
+            const clickImage = document.getElementById('click-image'); 
+            let clickShown = false; 
 
             swipeImage.style.display = 'block';
 
@@ -223,18 +223,18 @@
             }
 
             document.getElementById('overlay-container').addEventListener('scroll', function () {
-                swipeImage.style.display = 'none';
+                swipeImage.style.display = 'none'; 
 
                 if (!clickShown) {
-                    clickImage.style.display = 'block';
-                    clickShown = true;
+                    clickImage.style.display = 'block'; 
+                    clickShown = true; 
                 }
             });
 
             document.querySelectorAll('.overlay-image').forEach((img) => {
                 img.addEventListener('click', function (e) {
-                    swipeImage.style.display = 'none';
-                    clickImage.style.display = 'none';
+                    swipeImage.style.display = 'none'; 
+                    clickImage.style.display = 'none'; 
                 });
             });
         }
@@ -278,7 +278,7 @@
 
             newImage.onload = function () {
                 const aspectRatio = newImage.width / newImage.height;
-                const maxWidth = window.innerWidth * 0.8;
+                const maxWidth = window.innerWidth * 0.8; 
                 const maxHeight = window.innerHeight * 0.8;
 
                 if (newImage.width > maxWidth) {
@@ -297,7 +297,7 @@
             newImage.style.transform = 'translate(-50%, -50%)';
 
             newImage.style.width = 'auto';
-            newImage.style.height = '40%';
+            newImage.style.height = '40%'; 
 
             newImage.style.zIndex = '10';
 
@@ -308,41 +308,41 @@
             hammer.get('rotate').set({ enable: true });
 
             let initialScale = 1;
-            let currentRotation = 0;
+            let currentRotation = 0; 
 
             hammer.on('pinchstart', function () {
                 initialScale = parseFloat(newImage.style.transform.replace(/.*scale\((.*)\).*/, '$1')) || 1;
-                document.getElementById('hands').style.display = 'none';
+                document.getElementById('hands').style.display = 'none'; 
                 document.getElementById('hand_rotation').style.display = 'block';
             });
 
             hammer.on('pinch', function (ev) {
                 const newScale = initialScale * ev.scale;
                 newImage.style.transform = `translate(-50%, -50%) scale(${newScale}) rotate(${currentRotation}deg)`;
-                document.getElementById('hands').style.display = 'none';
-                document.getElementById('hand_rotation').style.display = 'block';
+                document.getElementById('hands').style.display = 'none'; 
+                document.getElementById('hand_rotation').style.display = 'block'; 
             });
 
             hammer.on('rotatestart', function () {
                 currentRotation = parseFloat(newImage.style.transform.replace(/.*rotate\((.*)deg\).*/, '$1')) || 0;
-                document.getElementById('hands').style.display = 'none';
-                document.getElementById('hand_rotation').style.display = 'block';
+                document.getElementById('hands').style.display = 'none'; 
+                document.getElementById('hand_rotation').style.display = 'block'; 
             });
 
             hammer.on('rotate', function (ev) {
                 const newRotation = currentRotation + ev.rotation;
                 newImage.style.transform = `translate(-50%, -50%) scale(${initialScale}) rotate(${newRotation}deg)`;
-                document.getElementById('hands').style.display = 'none';
-                document.getElementById('hand_rotation').style.display = 'block';
+                document.getElementById('hands').style.display = 'none'; 
+                document.getElementById('hand_rotation').style.display = 'block'; 
             });
 
             hammer.on('pinchend rotatend', function () {
-                document.getElementById('hand_rotation').style.display = 'none';
+                document.getElementById('hand_rotation').style.display = 'none'; 
             });
 
             hammer.on('dragstart', function () {
-                document.getElementById('hands').style.display = 'none';
-                document.getElementById('hand_rotation').style.display = 'none';
+                document.getElementById('hands').style.display = 'none'; 
+                document.getElementById('hand_rotation').style.display = 'none'; 
             });
 
             hammer.on('pan', function (ev) {
@@ -352,12 +352,12 @@
                 newImage.style.left = `${left}px`;
                 newImage.style.top = `${top}px`;
 
-                document.getElementById('hands').style.display = 'none';
-                document.getElementById('hand_rotation').style.display = 'none';
+                document.getElementById('hands').style.display = 'none'; 
+                document.getElementById('hand_rotation').style.display = 'none'; 
             });
 
             newImage.addEventListener('mousedown', function () {
-                document.getElementById('hands').style.display = 'none';
+                document.getElementById('hands').style.display = 'none'; 
             });
         }
     </script>
