@@ -203,7 +203,6 @@
         function initSwipeImage() {
             const swipeImage = document.getElementById('swipe-image');
 
-            // Show swipe image when the camera access popup is allowed
             if (navigator.permissions) {
                 navigator.permissions.query({ name: 'camera' }).then(result => {
                     if (result.state === 'granted') {
@@ -211,11 +210,9 @@
                     }
                 });
             } else {
-                // For browsers that don't support Permissions API
                 swipeImage.style.display = 'block';
             }
 
-            // Hide swipe image when slider or items are interacted with
             document.getElementById('overlay-container').addEventListener('scroll', function () {
                 swipeImage.style.display = 'none';
             });
@@ -348,7 +345,7 @@
             e.preventDefault();
 
             const handRotation = document.getElementById('hand_rotation');
-            handRotation.style.display = 'block'; // Show hand_rotation.gif during pinch/zoom/rotate
+            handRotation.style.display = 'block';
 
             let initialDistance = null;
             let initialWidth = element.clientWidth;
@@ -399,7 +396,7 @@
             function onPinchEnd() {
                 document.removeEventListener('touchmove', onPinchMove);
                 document.removeEventListener('touchend', onPinchEnd);
-                handRotation.style.display = 'none'; // Hide hand_rotation.gif after pinch/zoom/rotate
+                handRotation.style.display = 'none'; 
                 initialDistance = null;
             }
 
