@@ -96,7 +96,7 @@
             bottom: 20px;
             left: 20px;
             width: 60px;
-            height: 72px;
+            height: 60px;
             z-index: 2;
         }
         #hands, #hand_rotation {
@@ -115,15 +115,6 @@
             50% { top: 20%; left: 20%; }
             100% { top: 60%; left: 60%; }
         }
-        #swipe {
-            position: fixed;
-            top: 80px; /* Positioned just below the slider */
-            right: 0;
-            width: 70px;
-            height: 70px;
-            display: none; /* Initially hidden */
-            z-index: 3; /* Ensure it's above other elements */
-        }
     </style>
 </head>
 <body>
@@ -133,13 +124,7 @@
     <div id="overlay-container">
         <img id="joy" class="overlay-image" src="joy.png" alt="joy Overlay">
         <img id="sad" class="overlay-image" src="sad.png" alt="sad Overlay">
-        <img id="disgust" class="overlay-image" src="disgust.png" alt="disgust Overlay">
-        <img id="anger" class="overlay-image" src="anger.png" alt="anger Overlay">
-        <img id="fear" class="overlay-image" src="fear.png" alt="fear Overlay">
-        <img id="envy" class="overlay-image" src="envy.png" alt="envy Overlay">
-        <img id="ansiety" class="overlay-image" src="ansiety.png" alt="ansiety Overlay">
-        <img id="ennui" class="overlay-image" src="ennui.png" alt="ennui Overlay">
-        <img id="ambarrassment" class="overlay-image" src="ambarrassment.png" alt="ambarrassment Overlay">
+        <!-- Add other overlay images here -->
     </div>
 
     <button id="capture-button"></button>
@@ -148,8 +133,6 @@
 
     <img id="hands" src="hands.png" alt="Hands Animation">
     <img id="hand_rotation" src="hand_rotation.gif" alt="Hand Rotation Animation">
-    
-    <img id="swipe" src="swipe.gif" alt="Swipe Image">
 
     <div id="preview-container">
         <img id="preview-image" alt="Preview">
@@ -185,7 +168,6 @@
                     video.srcObject = stream;
                     video.onloadedmetadata = function() {
                         video.play();
-                        document.getElementById('swipe').style.display = 'block'; // Show swipe.gif when camera access is granted
                     };
                 })
                 .catch(function(err) {
@@ -200,16 +182,6 @@
                     createCentralItem(e.target.src);
                 });
             });
-
-            // Hide swipe.gif when interacting with the slider
-            document.getElementById('overlay-container').addEventListener('touchstart', function() {
-                document.getElementById('swipe').style.display = 'none';
-            });
-
-            // Also hide swipe.gif when the slider is interacted with via mouse
-            document.getElementById('overlay-container').addEventListener('mousedown', function() {
-                document.getElementById('swipe').style.display = 'none';
-            });
         }
 
         function createCentralItem(src) {
@@ -218,13 +190,14 @@
             newImage.className = 'draggable';
 
             newImage.onload = function () {
-                const aspectRatio = newImage.naturalWidth / newImage.naturalHeight;
-                const initialWidth = 100;
-                const initialHeight = initialWidth / aspectRatio;
+                const aspectRatio = newImage.naturalWidth / newImage.naturalHeight; // Image aspect ratio
+                const initialWidth = 100; // Initial width
+                const initialHeight = initialWidth / aspectRatio; // Height based on aspect ratio
 
                 newImage.style.width = initialWidth + 'px';
                 newImage.style.height = initialHeight + 'px';
 
+                // Position in center
                 const x = (window.innerWidth - initialWidth) / 2;
                 const y = (window.innerHeight - initialHeight) / 2;
                 newImage.style.left = `${x}px`;
@@ -234,7 +207,7 @@
                 initDraggable(newImage);
 
                 const hands = document.getElementById('hands');
-                if (!hands.classList.contains('used')) { // Only show if it hasn't been used
+                if (!hands.classList.contains('used')) {
                     hands.style.display = 'block';
                 }
             };
@@ -244,7 +217,7 @@
             let posX = 0, posY = 0, initialRotation = 0;
             const hands = document.getElementById('hands');
             const handRotation = document.getElementById('hand_rotation');
-            let firstDrag = true; // Track first drag
+            let firstDrag = true;
 
             element.addEventListener('touchstart', function(e) {
                 if (e.touches.length === 1) {
@@ -252,68 +225,149 @@
                     posX = touch.clientX;
                     posY = touch.clientY;
 
-                    element.style.zIndex = 11; // Bring element to the front
-
-                    if (firstDrag) { // Hide hands.png on first drag and never show it again
+                    element.style.zIndex = 11;
+                    if (firstDrag) {
                         hands.style.display = 'none';
-                        hands.classList.add('used'); // Mark hands.png as used
-                        firstDrag = false; // Prevent future showing
+                        hands.classList.add('used');
+                        firstDrag = false;
                     }
-
-                    handRotation.style.display = 'none'; // Hide hand_rotation.gif during drag
+                    handRotation.style.display = 'none';
 
                     document.addEventListener('touchmove', onTouchMove);
                     document.addEventListener('touchend', onTouchEnd);
                 } else if (e.touches.length === 2) {
-                    pinchZoom(e);
+                    pinchToZoomAndRotate(element, e);
                 }
             });
 
-            element.addEventListener('mousedown', function(e) {
-                posX = e.clientX;
-                posY = e.clientY;
-
-                element.style.zIndex = 11; // Bring element to the front
-
-                document.addEventListener('mousemove', onMouseMove);
-                document.addEventListener('mouseup', onMouseUp);
-            });
-
             function onTouchMove(e) {
-                const touch = e.touches[0];
-                const deltaX = touch.clientX - posX;
-                const deltaY = touch.clientY - posY;
-                element.style.left = (parseInt(element.style.left, 10) + deltaX) + 'px';
-                element.style.top = (parseInt(element.style.top, 10) + deltaY) + 'px';
-                posX = touch.clientX;
-                posY = touch.clientY;
+                if (e.touches.length === 1) {
+                    const touch = e.touches[0];
+                    const dx = touch.clientX - posX;
+                    const dy = touch.clientY - posY;
+
+                    posX = touch.clientX;
+                    posY = touch.clientY;
+
+                    element.style.left = (element.offsetLeft + dx) + 'px';
+                    element.style.top = (element.offsetTop + dy) + 'px';
+
+                    checkOverlap(element);
+                }
             }
 
             function onTouchEnd() {
                 document.removeEventListener('touchmove', onTouchMove);
                 document.removeEventListener('touchend', onTouchEnd);
             }
+        }
 
-            function onMouseMove(e) {
-                const deltaX = e.clientX - posX;
-                const deltaY = e.clientY - posY;
-                element.style.left = (parseInt(element.style.left, 10) + deltaX) + 'px';
-                element.style.top = (parseInt(element.style.top, 10) + deltaY) + 'px';
-                posX = e.clientX;
-                posY = e.clientY;
+        function pinchToZoomAndRotate(element, e) {
+            e.preventDefault();
+
+            const handRotation = document.getElementById('hand_rotation');
+            handRotation.style.display = 'block';
+
+            const touch1 = e.touches[0];
+            const touch2 = e.touches[1];
+
+            const dist = getDistance(touch1, touch2);
+            const angle = getAngle(touch1, touch2);
+
+            let initialDist = dist;
+            let initialAngle = angle;
+            let scale = 1;
+            let rotation = 0;
+
+            function onTouchMove(e) {
+                const touch1 = e.touches[0];
+                const touch2 = e.touches[1];
+
+                const dist = getDistance(touch1, touch2);
+                const angle = getAngle(touch1, touch2);
+
+                scale = dist / initialDist;
+                rotation = angle - initialAngle;
+
+                element.style.transform = `scale(${scale}) rotate(${rotation}deg)`;
             }
 
-            function onMouseUp() {
-                document.removeEventListener('mousemove', onMouseMove);
-                document.removeEventListener('mouseup', onMouseUp);
+            function onTouchEnd() {
+                document.removeEventListener('touchmove', onTouchMove);
+                document.removeEventListener('touchend', onTouchEnd);
+                handRotation.style.display = 'none';
             }
 
-            function pinchZoom(e) {
-                handRotation.style.display = 'block'; // Show hand_rotation.gif during pinch zoom
-                // Implement pinch zoom logic here
+            document.addEventListener('touchmove', onTouchMove);
+            document.addEventListener('touchend', onTouchEnd);
+        }
+
+        function getDistance(touch1, touch2) {
+            const dx = touch2.clientX - touch1.clientX;
+            const dy = touch2.clientY - touch1.clientY;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+
+        function getAngle(touch1, touch2) {
+            const dx = touch2.clientX - touch1.clientX;
+            const dy = touch2.clientY - touch1.clientY;
+            return Math.atan2(dy, dx) * (180 / Math.PI);
+        }
+
+        function checkOverlap(item) {
+            const sphere = document.getElementById('sphere');
+            const sphereRect = sphere.getBoundingClientRect();
+            const itemRect = item.getBoundingClientRect();
+
+            if (itemRect.left < sphereRect.right &&
+                itemRect.right > sphereRect.left &&
+                itemRect.top < sphereRect.bottom &&
+                itemRect.bottom > sphereRect.top) {
+                item.style.display = 'none';
             }
         }
-    </script>
 
+        document.getElementById('capture-button').addEventListener('click', function() {
+            capturePhoto();
+        });
+
+        function capturePhoto() {
+            const canvas = document.getElementById('canvas');
+            const context = canvas.getContext('2d');
+            const video = document.getElementById('video');
+
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            const items = document.querySelectorAll('.draggable');
+            items.forEach(item => {
+                const itemRect = item.getBoundingClientRect();
+                const canvasRect = canvas.getBoundingClientRect();
+
+                context.drawImage(
+                    item,
+                    itemRect.left - canvasRect.left,
+                    itemRect.top - canvasRect.top,
+                    itemRect.width,
+                    itemRect.height
+                );
+            });
+
+            const imageUrl = canvas.toDataURL('image/png');
+            const previewImage = document.getElementById('preview-image');
+            previewImage.src = imageUrl;
+            document.getElementById('preview-container').style.display = 'block';
+
+            previewImage.addEventListener('click', function() {
+                document.getElementById('fullsize-image-img').src = imageUrl;
+                document.getElementById('fullsize-image').style.display = 'flex';
+            });
+
+            document.getElementById('fullsize-image').addEventListener('click', function() {
+                this.style.display = 'none';
+            });
+        }
+    </script>
 </body>
 </html>
