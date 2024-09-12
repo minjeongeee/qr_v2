@@ -110,24 +110,17 @@
             z-index: 2;
         }
 
-        #hands {
+        #hands, #hand_rotation {
             position: fixed;
             width: 40px;
             height: 40px;
             z-index: 12;
             pointer-events: none;
             display: none; /* Initially hidden */
-            left: 60%; /* Fixed position */
-            top: 50%; /* Fixed position */
         }
 
-        #hand_rotation {
-            position: fixed;
-            width: 40px;
-            height: 40px;
-            z-index: 12;
-            pointer-events: none;
-            display: none; /* Initially hidden */
+        #hands {
+            animation: diagonalMove 2s linear infinite;
         }
 
         #swipe-image {
@@ -140,6 +133,7 @@
             display: none; /* 항상 보이도록 기본값을 block으로 설정 */
         }
 
+
         #click-image {
             position: fixed;
             left: 50%;
@@ -148,6 +142,23 @@
             width: 120px; /* Adjust width as needed */
             height: 120px; /* Adjust height as needed */
             z-index: 13; /* Higher than swipe-image */
+        }
+
+        @keyframes diagonalMove {
+            0% {
+                top: 60%;
+                left: 70%;
+            }
+
+            50% {
+                top: 30%;
+                left: 70%;
+            }
+
+            100% {
+                top: 60%;
+                left: 70%;
+            }
         }
     </style>
 </head>
@@ -173,11 +184,11 @@
 
     <img id="swipe-image" src="swipe.gif" alt="Swipe">
 
-    <!-- Updated: Changed from hands.png to hands.gif -->
-    <img id="hands" src="hands.gif" alt="Hands Animation">
+    <img id="hands" src="hands.png" alt="Hands Animation">
     <img id="hand_rotation" src="hand_rotation.gif" alt="Hand Rotation Animation">
 
     <img id="click-image" src="click.gif" alt="Click" style="display: none;">
+
 
     <div id="preview-container">
         <img id="preview-image" alt="Preview">
@@ -207,11 +218,14 @@
             };
         };
 
+
+
         function initSwipeImage() {
             const swipeImage = document.getElementById('swipe-image');
             const clickImage = document.getElementById('click-image'); 
             let clickShown = false; 
 
+            
             swipeImage.style.display = 'block';
 
             if (navigator.permissions) {
@@ -238,6 +252,11 @@
                 });
             });
         }
+
+
+
+
+
 
         function startCamera() {
             const constraints = {
@@ -277,88 +296,227 @@
             newImage.className = 'draggable';
 
             newImage.onload = function () {
-                const aspectRatio = newImage.width / newImage.height;
-                const maxWidth = window.innerWidth * 0.8; 
-                const maxHeight = window.innerHeight * 0.8;
+                const aspectRatio = newImage.naturalWidth / newImage.naturalHeight; // 이미지의 원본 비율
+                const initialWidth = 100; // 원하는 초기 너비 (100px)
+                const initialHeight = initialWidth / aspectRatio; // 원본 비율에 따른 높이 계산
 
-                if (newImage.width > maxWidth) {
-                    newImage.width = maxWidth;
-                    newImage.height = maxWidth / aspectRatio;
-                }
+                newImage.style.width = initialWidth + 'px';
+                newImage.style.height = initialHeight + 'px';
 
-                if (newImage.height > maxHeight) {
-                    newImage.height = maxHeight;
-                    newImage.width = maxHeight * aspectRatio;
+                // 화면 중앙에 위치시키기
+                const x = (window.innerWidth - initialWidth) / 2;
+                const y = (window.innerHeight - initialHeight) / 2;
+                newImage.style.left = `${x}px`;
+                newImage.style.top = `${y}px`;
+
+                document.body.appendChild(newImage);
+                initDraggable(newImage);
+
+                const hands = document.getElementById('hands');
+                if (!hands.classList.contains('used')) { // Only show if it hasn't been used
+                    hands.style.display = 'block';
                 }
             };
+        }
 
-            newImage.style.left = '50%';
-            newImage.style.top = '50%';
-            newImage.style.transform = 'translate(-50%, -50%)';
+        function initDraggable(element) {
+            let posX = 0, posY = 0, initialRotation = 0;
+            const hands = document.getElementById('hands');
+            const handRotation = document.getElementById('hand_rotation');
+            let firstDrag = true; // Track first drag
 
-            newImage.style.width = 'auto';
-            newImage.style.height = '40%'; 
+            element.addEventListener('touchstart', function (e) {
+                if (e.touches.length === 1) {
+                    const touch = e.touches[0];
+                    posX = touch.clientX;
+                    posY = touch.clientY;
 
-            newImage.style.zIndex = '10';
+                    element.style.zIndex = 11; // Bring element to the front
+                    if (firstDrag) { // Hide hands.png on first drag and never show it again
+                        hands.style.display = 'none';
+                        hands.classList.add('used'); // Mark hands.png as used
+                        firstDrag = false; // Prevent future showing
+                    }
 
-            document.body.appendChild(newImage);
+                    handRotation.style.display = 'none'; // Hide hand_rotation.gif during drag
 
-            const hammer = new Hammer(newImage);
-            hammer.get('pinch').set({ enable: true });
-            hammer.get('rotate').set({ enable: true });
-
-            let initialScale = 1;
-            let currentRotation = 0; 
-
-            hammer.on('pinchstart', function () {
-                initialScale = parseFloat(newImage.style.transform.replace(/.*scale\((.*)\).*/, '$1')) || 1;
-                document.getElementById('hands').style.display = 'none'; 
-                document.getElementById('hand_rotation').style.display = 'block';
+                    document.addEventListener('touchmove', onTouchMove);
+                    document.addEventListener('touchend', onTouchEnd);
+                } else if (e.touches.length === 2) {
+                    pinchToZoomAndRotate(element, e);
+                }
             });
 
-            hammer.on('pinch', function (ev) {
-                const newScale = initialScale * ev.scale;
-                newImage.style.transform = `translate(-50%, -50%) scale(${newScale}) rotate(${currentRotation}deg)`;
-                document.getElementById('hands').style.display = 'none'; 
-                document.getElementById('hand_rotation').style.display = 'block'; 
+            function onTouchMove(e) {
+                if (e.touches.length === 1) {
+                    const touch = e.touches[0];
+                    const dx = touch.clientX - posX;
+                    const dy = touch.clientY - posY;
+
+                    posX = touch.clientX;
+                    posY = touch.clientY;
+
+                    element.style.left = (element.offsetLeft + dx) + 'px';
+                    element.style.top = (element.offsetTop + dy) + 'px';
+
+                    checkOverlap(element);
+                }
+            }
+
+            function onTouchEnd() {
+                document.removeEventListener('touchmove', onTouchMove);
+                document.removeEventListener('touchend', onTouchEnd);
+            }
+        }
+
+
+
+        function pinchToZoomAndRotate(element, e) {
+            e.preventDefault();
+
+            const handRotation = document.getElementById('hand_rotation');
+            handRotation.style.display = 'block';
+
+            let initialDistance = null;
+            let initialWidth = element.clientWidth;
+            let initialHeight = element.clientHeight;
+            let initialAngle = 0;
+
+            function calculateDistance(e) {
+                const distX = e.touches[0].clientX - e.touches[1].clientX;
+                const distY = e.touches[0].clientY - e.touches[1].clientY;
+                return Math.sqrt(distX * distX + distY * distY);
+            }
+
+            function calculateAngle(e) {
+                const angle = Math.atan2(
+                    e.touches[1].clientY - e.touches[0].clientY,
+                    e.touches[1].clientX - e.touches[0].clientX
+                );
+                return angle * (180 / Math.PI);
+            }
+
+            if (initialDistance === null) {
+                initialDistance = calculateDistance(e);
+                initialAngle = calculateAngle(e);
+            } else {
+                const currentDistance = calculateDistance(e);
+                const currentAngle = calculateAngle(e);
+                const scale = currentDistance / initialDistance;
+                const rotation = currentAngle - initialAngle;
+
+                element.style.width = initialWidth * scale + 'px';
+                element.style.height = initialHeight * scale + 'px';
+                element.style.transform = `rotate(${rotation}deg)`;
+            }
+
+            function onPinchMove(e) {
+                if (e.touches.length === 2) {
+                    const currentDistance = calculateDistance(e);
+                    const currentAngle = calculateAngle(e);
+                    const scale = currentDistance / initialDistance;
+                    const rotation = currentAngle - initialAngle;
+
+                    element.style.width = initialWidth * scale + 'px';
+                    element.style.height = initialHeight * scale + 'px';
+                    element.style.transform = `rotate(${rotation}deg)`;
+                }
+            }
+
+            function onPinchEnd() {
+                document.removeEventListener('touchmove', onPinchMove);
+                document.removeEventListener('touchend', onPinchEnd);
+                handRotation.style.display = 'none';
+                initialDistance = null;
+            }
+
+            document.addEventListener('touchmove', onPinchMove);
+            document.addEventListener('touchend', onPinchEnd);
+        }
+
+        function checkOverlap(element) {
+            const sphere = document.getElementById('sphere');
+            const sphereRect = sphere.getBoundingClientRect();
+            const elementRect = element.getBoundingClientRect();
+
+            if (elementRect.left < sphereRect.right &&
+                elementRect.right > sphereRect.left &&
+                elementRect.top < sphereRect.bottom &&
+                elementRect.bottom > sphereRect.top) {
+                sphere.style.opacity = 0.5;
+                element.remove();
+            } else {
+                sphere.style.opacity = 1;
+            }
+        }
+
+        document.getElementById('capture-button').addEventListener('click', captureScreenshot);
+
+        function captureScreenshot() {
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+
+            // 캔버스 크기를 비디오의 실제 해상도로 설정
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // 화면 비율 계산
+            const scaleX = canvas.width / window.innerWidth;
+            const scaleY = canvas.height / window.innerHeight;
+
+            document.querySelectorAll('.draggable').forEach((img) => {
+                // 화면의 실제 위치와 크기를 비디오의 실제 해상도에 맞춰 계산
+                const imgWidth = img.clientWidth * scaleX;
+                const imgHeight = img.clientHeight * scaleY;
+                const imgX = img.offsetLeft * scaleX;
+                const imgY = img.offsetTop * scaleY;
+                // 이미지 회전 값 가져오기
+                const transform = window.getComputedStyle(img).transform;
+                let angle = 0;
+
+                if (transform !== 'none') {
+                    const values = transform.split('(')[1].split(')')[0].split(',');
+                    const a = values[0];
+                    const b = values[1];
+                    angle = Math.round(Math.atan2(b, a) * (180 / Math.PI));
+                }
+
+                ctx.save();
+                ctx.translate(imgX + imgWidth / 2, imgY + imgHeight / 2); // 이미지의 중심으로 이동
+                ctx.rotate(angle * Math.PI / 180); // 회전 적용
+                ctx.drawImage(img, -imgWidth / 2, -imgHeight / 2, imgWidth, imgHeight); // 중심 기준으로 이미지 그림
+                ctx.restore();
             });
 
-            hammer.on('rotatestart', function () {
-                currentRotation = parseFloat(newImage.style.transform.replace(/.*rotate\((.*)deg\).*/, '$1')) || 0;
-                document.getElementById('hands').style.display = 'none'; 
-                document.getElementById('hand_rotation').style.display = 'block'; 
-            });
+            const dataUrl = canvas.toDataURL('image/png');
+            showPreview(dataUrl);
+        }
 
-            hammer.on('rotate', function (ev) {
-                const newRotation = currentRotation + ev.rotation;
-                newImage.style.transform = `translate(-50%, -50%) scale(${initialScale}) rotate(${newRotation}deg)`;
-                document.getElementById('hands').style.display = 'none'; 
-                document.getElementById('hand_rotation').style.display = 'block'; 
-            });
+        function showPreview(dataUrl) {
+            const previewImage = document.getElementById('preview-image');
+            const previewContainer = document.getElementById('preview-container');
 
-            hammer.on('pinchend rotatend', function () {
-                document.getElementById('hand_rotation').style.display = 'none'; 
-            });
+            previewImage.src = dataUrl;
+            previewContainer.style.display = 'block';
 
-            hammer.on('dragstart', function () {
-                document.getElementById('hands').style.display = 'none'; 
-                document.getElementById('hand_rotation').style.display = 'none'; 
-            });
+            previewImage.onclick = function () {
+                showFullSizeImage(dataUrl);
+            };
+        }
 
-            hammer.on('pan', function (ev) {
-                const left = parseFloat(newImage.style.left) + ev.deltaX;
-                const top = parseFloat(newImage.style.top) + ev.deltaY;
+        function showFullSizeImage(dataUrl) {
+            const fullSizeContainer = document.getElementById('fullsize-image');
+            const fullSizeImage = document.getElementById('fullsize-image-img');
 
-                newImage.style.left = `${left}px`;
-                newImage.style.top = `${top}px`;
+            fullSizeImage.src = dataUrl;
+            fullSizeContainer.style.display = 'flex';
 
-                document.getElementById('hands').style.display = 'none'; 
-                document.getElementById('hand_rotation').style.display = 'none'; 
-            });
-
-            newImage.addEventListener('mousedown', function () {
-                document.getElementById('hands').style.display = 'none'; 
-            });
+            fullSizeImage.onclick = function () {
+                fullSizeContainer.style.display = 'none';
+            };
         }
     </script>
 </body>
