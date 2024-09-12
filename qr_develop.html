@@ -110,6 +110,17 @@
         #hands {
             animation: diagonalMove 2s linear infinite;
         }
+
+        #swipe-image {
+            position: fixed;
+            width: 70px;
+            height: 70px;
+            bottom: 0;
+            right: 5px;
+            z-index: 1000; /* Ensure it appears above other elements */
+            display: none; /* Initially hidden */
+        }
+
         @keyframes diagonalMove {
             0% { top: 60%; left: 60%; }
             50% { top: 20%; left: 20%; }
@@ -137,6 +148,8 @@
 
     <img id="sphere" src="sphere.png" alt="Sphere">
 
+    <img id="swipe-image" src="swipe.gif" alt="Swipe" style="display: none;">
+
     <img id="hands" src="hands.png" alt="Hands Animation">
     <img id="hand_rotation" src="hand_rotation.gif" alt="Hand Rotation Animation">
 
@@ -156,7 +169,40 @@
         window.onload = function() {
             startCamera();
             initItemEvents();
+            initSwipeImage();
         };
+
+
+
+        function initSwipeImage() {
+            const swipeImage = document.getElementById('swipe-image');
+
+            // Show swipe image when the camera access popup is allowed
+            if (navigator.permissions) {
+                navigator.permissions.query({ name: 'camera' }).then(result => {
+                    if (result.state === 'granted') {
+                        swipeImage.style.display = 'block';
+                    }
+                });
+            } else {
+                // For browsers that don't support Permissions API
+                swipeImage.style.display = 'block';
+            }
+
+            // Hide swipe image when slider or items are interacted with
+            document.getElementById('overlay-container').addEventListener('scroll', function() {
+                swipeImage.style.display = 'none';
+            });
+
+            document.querySelectorAll('.overlay-image').forEach((img) => {
+                img.addEventListener('click', function(e) {
+                    swipeImage.style.display = 'none';
+                });
+            });
+        }
+
+
+
 
         function startCamera() {
             const constraints = {
