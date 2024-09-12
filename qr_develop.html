@@ -344,9 +344,13 @@
                         hands.style.display = 'none';
                         hands.classList.add('used'); // Mark hands.gif as used
                         firstDrag = false; // Prevent future showing
-                    }
 
-                    handRotation.style.display = 'none'; // Hide hand_rotation.gif during drag
+                        // Show hand_rotation.gif
+                        const elementRect = element.getBoundingClientRect();
+                        handRotation.style.left = `${elementRect.right + 50}px`;
+                        handRotation.style.top = `${elementRect.top}px`;
+                        handRotation.style.display = 'block'; // Show hand_rotation.gif
+                    }
 
                     document.addEventListener('touchmove', onTouchMove);
                     document.addEventListener('touchend', onTouchEnd);
@@ -383,7 +387,7 @@
             e.preventDefault();
 
             const handRotation = document.getElementById('hand_rotation');
-            handRotation.style.display = 'block';
+            handRotation.style.display = 'block'; // Show hand_rotation.gif
 
             let initialDistance = null;
             let initialWidth = element.clientWidth;
@@ -416,6 +420,11 @@
                 element.style.width = initialWidth * scale + 'px';
                 element.style.height = initialHeight * scale + 'px';
                 element.style.transform = `rotate(${rotation}deg)`;
+
+                // Update hand_rotation.gif position
+                const elementRect = element.getBoundingClientRect();
+                handRotation.style.left = `${elementRect.right + 50}px`;
+                handRotation.style.top = `${elementRect.top}px`;
             }
 
             function onPinchMove(e) {
@@ -428,13 +437,18 @@
                     element.style.width = initialWidth * scale + 'px';
                     element.style.height = initialHeight * scale + 'px';
                     element.style.transform = `rotate(${rotation}deg)`;
+
+                    // Update hand_rotation.gif position
+                    const elementRect = element.getBoundingClientRect();
+                    handRotation.style.left = `${elementRect.right + 50}px`;
+                    handRotation.style.top = `${elementRect.top}px`;
                 }
             }
 
             function onPinchEnd() {
                 document.removeEventListener('touchmove', onPinchMove);
                 document.removeEventListener('touchend', onPinchEnd);
-                handRotation.style.display = 'none';
+                handRotation.style.display = 'none'; // Hide hand_rotation.gif
                 initialDistance = null;
             }
 
