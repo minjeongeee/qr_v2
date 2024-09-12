@@ -332,6 +332,7 @@
             const hands = document.getElementById('hands');
             const handRotation = document.getElementById('hand_rotation');
             let firstDrag = true; // Track first drag
+            let rotatedOnce = false; // Track if rotation has occurred
 
             element.addEventListener('touchstart', function (e) {
                 if (e.touches.length === 1) {
@@ -383,11 +384,11 @@
 
 
 
+
         function pinchToZoomAndRotate(element, e) {
             e.preventDefault();
 
             const handRotation = document.getElementById('hand_rotation');
-            handRotation.style.display = 'block'; // Show hand_rotation.gif
 
             let initialDistance = null;
             let initialWidth = element.clientWidth;
@@ -425,6 +426,12 @@
                 const elementRect = element.getBoundingClientRect();
                 handRotation.style.left = `${elementRect.right + 50}px`;
                 handRotation.style.top = `${elementRect.top}px`;
+
+                // Hide hand_rotation.gif after rotation
+                if (!rotatedOnce) {
+                    handRotation.style.display = 'none';
+                    rotatedOnce = true;
+                }
             }
 
             function onPinchMove(e) {
@@ -448,7 +455,6 @@
             function onPinchEnd() {
                 document.removeEventListener('touchmove', onPinchMove);
                 document.removeEventListener('touchend', onPinchEnd);
-                handRotation.style.display = 'none'; // Hide hand_rotation.gif
                 initialDistance = null;
             }
 
