@@ -110,7 +110,7 @@
             z-index: 2;
         }
 
-        #hands, #hand_rotation {
+        #hand_rotation {
             position: fixed;
             width: 40px;
             height: 40px;
@@ -120,7 +120,15 @@
         }
 
         #hands {
-            animation: diagonalMove 2s linear infinite;
+            position: fixed;
+            left: 60%;
+            top: 50%;
+            transform: translate(-50%, -50%); /* Center the image */
+            width: 40px;
+            height: 40px;
+            z-index: 12;
+            pointer-events: none;
+            display: none; /* Initially hidden */
         }
 
         #swipe-image {
@@ -185,6 +193,9 @@
     <img id="swipe-image" src="swipe.gif" alt="Swipe">
 
     <img id="hands" src="hands.png" alt="Hands Animation">
+
+    <img id="hands" src="hands.gif" alt="Hands Animation">
+
     <img id="hand_rotation" src="hand_rotation.gif" alt="Hand Rotation Animation">
 
     <img id="click-image" src="click.gif" alt="Click" style="display: none;">
@@ -222,10 +233,10 @@
 
         function initSwipeImage() {
             const swipeImage = document.getElementById('swipe-image');
-            const clickImage = document.getElementById('click-image'); 
-            let clickShown = false; 
+            const clickImage = document.getElementById('click-image');
+            let clickShown = false;
 
-            
+
             swipeImage.style.display = 'block';
 
             if (navigator.permissions) {
@@ -237,18 +248,18 @@
             }
 
             document.getElementById('overlay-container').addEventListener('scroll', function () {
-                swipeImage.style.display = 'none'; 
+                swipeImage.style.display = 'none';
 
                 if (!clickShown) {
-                    clickImage.style.display = 'block'; 
-                    clickShown = true; 
+                    clickImage.style.display = 'block';
+                    clickShown = true;
                 }
             });
 
             document.querySelectorAll('.overlay-image').forEach((img) => {
                 img.addEventListener('click', function (e) {
-                    swipeImage.style.display = 'none'; 
-                    clickImage.style.display = 'none'; 
+                    swipeImage.style.display = 'none';
+                    clickImage.style.display = 'none';
                 });
             });
         }
@@ -332,9 +343,9 @@
                     posY = touch.clientY;
 
                     element.style.zIndex = 11; // Bring element to the front
-                    if (firstDrag) { // Hide hands.png on first drag and never show it again
+                    if (firstDrag) { // Hide hands.gif on first drag and never show it again
                         hands.style.display = 'none';
-                        hands.classList.add('used'); // Mark hands.png as used
+                        hands.classList.add('used'); // Mark hands.gif as used
                         firstDrag = false; // Prevent future showing
                     }
 
