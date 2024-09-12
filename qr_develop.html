@@ -224,6 +224,7 @@
         function initSwipeImage() {
             const swipeImage = document.getElementById('swipe-image');
             const clickImage = document.getElementById('click-image'); // Add reference to click.gif
+            let clickShown = false; // Add a flag to track if click.gif has been shown
 
             // Show swipe.gif initially
             swipeImage.style.display = 'block';
@@ -238,7 +239,12 @@
 
             document.getElementById('overlay-container').addEventListener('scroll', function () {
                 swipeImage.style.display = 'none'; // Hide swipe.gif when the slider is scrolled
-                clickImage.style.display = 'block'; // Show click.gif when swipe.gif disappears
+
+                // Show click.gif only once when swipe.gif disappears
+                if (!clickShown) {
+                    clickImage.style.display = 'block'; // Show click.gif when swipe.gif disappears
+                    clickShown = true; // Set the flag to true after showing click.gif
+                }
             });
 
             document.querySelectorAll('.overlay-image').forEach((img) => {
