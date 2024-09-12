@@ -420,13 +420,13 @@
                     const scale = currentDistance / initialDistance;
                     const rotation = currentAngle - initialAngle;
 
-                    element.style.width = initialWidth * scale + 'px';
-                    element.style.height = initialHeight * scale + 'px';
+                    element.style.width = (initialWidth * scale) + 'px';
+                    element.style.height = (initialHeight * scale) + 'px';
                     element.style.transform = `rotate(${rotation}deg)`;
 
                     const rect = element.getBoundingClientRect();
-                    handRotation.style.left = `${rect.right + 50}px`; // Position hand_rotation.gif to the right of the element
-                    handRotation.style.top = `${rect.top + rect.height / 2 - handRotation.clientHeight / 2}px`; // Center vertically
+                    handRotation.style.left = `${rect.right + 50}px`;
+                    handRotation.style.top = `${rect.top + rect.height / 2 - handRotation.clientHeight / 2}px`;
                 }
 
                 function onPinchMove(e) {
@@ -436,11 +436,10 @@
                         const scale = currentDistance / initialDistance;
                         const rotation = currentAngle - initialAngle;
 
-                        element.style.width = initialWidth * scale + 'px';
-                        element.style.height = initialHeight * scale + 'px';
+                        element.style.width = (initialWidth * scale) + 'px';
+                        element.style.height = (initialHeight * scale) + 'px';
                         element.style.transform = `rotate(${rotation}deg)`;
 
-                        // Update hand_rotation.gif position
                         const rect = element.getBoundingClientRect();
                         handRotation.style.left = `${rect.right + 50}px`;
                         handRotation.style.top = `${rect.top + rect.height / 2 - handRotation.clientHeight / 2}px`;
@@ -451,7 +450,7 @@
                     document.removeEventListener('touchmove', onPinchMove);
                     document.removeEventListener('touchend', onPinchEnd);
                     handRotation.style.display = 'none';
-                    isRotating = false; // Rotation has ended
+                    isRotating = false;
                     initialDistance = null;
                 }
 
@@ -459,6 +458,7 @@
                 document.addEventListener('touchend', onPinchEnd);
             }
         }
+
 
 
         function checkOverlap(element) {
