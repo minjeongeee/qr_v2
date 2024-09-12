@@ -232,8 +232,7 @@
         function initSwipeImage() {
             const swipeImage = document.getElementById('swipe-image');
             const clickImage = document.getElementById('click-image');
-            let clickShown = false;
-
+            let clickShown = false; // Flag to track if click.gif has been shown
 
             swipeImage.style.display = 'block';
 
@@ -248,9 +247,9 @@
             document.getElementById('overlay-container').addEventListener('scroll', function () {
                 swipeImage.style.display = 'none';
 
-                if (!clickShown) {
+                if (!clickShown) { // Check if click.gif has been shown
                     clickImage.style.display = 'block';
-                    clickShown = true;
+                    clickShown = true; // Set the flag to true after showing
                 }
             });
 
