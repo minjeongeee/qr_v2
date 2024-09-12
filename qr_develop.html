@@ -211,7 +211,11 @@
 
                 document.body.appendChild(newImage);
                 initDraggable(newImage);
-                document.getElementById('hands').style.display = 'block'; // Show hands.png when item is selected
+        
+                const hands = document.getElementById('hands');
+                if (!hands.classList.contains('used')) { // Only show if it hasn't been used
+                    hands.style.display = 'block';
+                }
             };
         }
 
@@ -219,6 +223,7 @@
             let posX = 0, posY = 0, initialRotation = 0;
             const hands = document.getElementById('hands');
             const handRotation = document.getElementById('hand_rotation');
+            let firstDrag = true; // Track first drag
 
             element.addEventListener('touchstart', function(e) {
                 if (e.touches.length === 1) {
@@ -227,7 +232,12 @@
                     posY = touch.clientY;
 
                     element.style.zIndex = 11; // Bring element to the front
-                    hands.style.display = 'none'; // Hide hands.png during drag
+                    if (firstDrag) { // Hide hands.png on first drag and never show it again
+                        hands.style.display = 'none';
+                        hands.classList.add('used'); // Mark hands.png as used
+                        firstDrag = false; // Prevent future showing
+                    }
+           
                     handRotation.style.display = 'none'; // Hide hand_rotation.gif during drag
 
                     document.addEventListener('touchmove', onTouchMove);
@@ -256,7 +266,6 @@
             function onTouchEnd() {
                 document.removeEventListener('touchmove', onTouchMove);
                 document.removeEventListener('touchend', onTouchEnd);
-                hands.style.display = 'block'; // Show hands.png after drag ends
             }
         }
 
@@ -412,4 +421,3 @@
     </script>
 </body>
 </html>
-
