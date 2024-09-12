@@ -10,6 +10,7 @@
             padding: 0;
             overflow: hidden;
         }
+
         #video {
             position: fixed;
             top: 0;
@@ -19,6 +20,7 @@
             object-fit: cover;
             z-index: 1;
         }
+
         #capture-button {
             position: fixed;
             bottom: 20px;
@@ -32,6 +34,7 @@
             border: none;
             cursor: pointer;
         }
+
         #overlay-container {
             position: fixed;
             top: 0;
@@ -45,6 +48,7 @@
             z-index: 2;
             padding: 10px 0;
         }
+
         .overlay-image {
             display: inline-block;
             margin: 0 10px;
@@ -53,12 +57,14 @@
             height: 50px;
             width: auto;
         }
+
         .draggable {
             position: absolute;
             touch-action: none;
             z-index: 10;
             transform-origin: center center;
         }
+
         #preview-container {
             position: fixed;
             bottom: 20px;
@@ -68,12 +74,14 @@
             height: 100px;
             display: none;
         }
+
         #preview-image {
             width: 100%;
             height: 100%;
             object-fit: cover;
             cursor: pointer;
         }
+
         #fullsize-image {
             position: fixed;
             top: 0;
@@ -86,11 +94,13 @@
             align-items: center;
             z-index: 9999;
         }
+
         #fullsize-image img {
             max-width: 90%;
             max-height: 90%;
             cursor: pointer;
         }
+
         #sphere {
             position: fixed;
             bottom: 20px;
@@ -99,6 +109,7 @@
             height: 75px;
             z-index: 2;
         }
+
         #hands, #hand_rotation {
             position: fixed;
             width: 100px;
@@ -107,27 +118,39 @@
             pointer-events: none;
             display: none; /* Initially hidden */
         }
+
         #hands {
             animation: diagonalMove 2s linear infinite;
         }
 
-        @media (max-width: 768px) { /* Adjust for mobile devices */
-            #swipe-image {
-                width: 70px;
-                height: 70px;
-                bottom: 0;
-                right: 5px;
-                z-index: 1000;
-                display: block; /* Make sure it is displayed */
-            }
+        #swipe-image {
+            position: fixed;
+            bottom: 0;
+            right: 5px;
+            width: 70px;
+            height: 70px;
+            z-index: 1001; /* 카메라 위에 표시되도록 z-index를 높게 설정 */
+            display: block; /* 항상 보이도록 기본값을 block으로 설정 */
+            pointer-events: none; /* 사용자 인터랙션이 없도록 설정 */
         }
 
 
 
         @keyframes diagonalMove {
-            0% { top: 60%; left: 60%; }
-            50% { top: 20%; left: 20%; }
-            100% { top: 60%; left: 60%; }
+            0% {
+                top: 60%;
+                left: 60%;
+            }
+
+            50% {
+                top: 20%;
+                left: 20%;
+            }
+
+            100% {
+                top: 60%;
+                left: 60%;
+            }
         }
     </style>
 </head>
@@ -169,7 +192,7 @@
     <script>
         let currentStream = null;
 
-        window.onload = function() {
+        window.onload = function () {
             startCamera();
             initItemEvents();
             initSwipeImage();
@@ -218,15 +241,15 @@
             };
 
             navigator.mediaDevices.getUserMedia(constraints)
-                .then(function(stream) {
+                .then(function (stream) {
                     currentStream = stream;
                     const video = document.getElementById('video');
                     video.srcObject = stream;
-                    video.onloadedmetadata = function() {
+                    video.onloadedmetadata = function () {
                         video.play();
                     };
                 })
-                .catch(function(err) {
+                .catch(function (err) {
                     console.error("Error: " + err);
                     alert("Could not access the camera. Please check your permissions.");
                 });
@@ -234,7 +257,7 @@
 
         function initItemEvents() {
             document.querySelectorAll('.overlay-image').forEach((img) => {
-                img.addEventListener('click', function(e) {
+                img.addEventListener('click', function (e) {
                     createCentralItem(e.target.src);
                 });
             });
@@ -261,7 +284,7 @@
 
                 document.body.appendChild(newImage);
                 initDraggable(newImage);
-        
+
                 const hands = document.getElementById('hands');
                 if (!hands.classList.contains('used')) { // Only show if it hasn't been used
                     hands.style.display = 'block';
@@ -275,7 +298,7 @@
             const handRotation = document.getElementById('hand_rotation');
             let firstDrag = true; // Track first drag
 
-            element.addEventListener('touchstart', function(e) {
+            element.addEventListener('touchstart', function (e) {
                 if (e.touches.length === 1) {
                     const touch = e.touches[0];
                     posX = touch.clientX;
@@ -287,7 +310,7 @@
                         hands.classList.add('used'); // Mark hands.png as used
                         firstDrag = false; // Prevent future showing
                     }
-           
+
                     handRotation.style.display = 'none'; // Hide hand_rotation.gif during drag
 
                     document.addEventListener('touchmove', onTouchMove);
@@ -452,7 +475,7 @@
             previewImage.src = dataUrl;
             previewContainer.style.display = 'block';
 
-            previewImage.onclick = function() {
+            previewImage.onclick = function () {
                 showFullSizeImage(dataUrl);
             };
         }
@@ -464,7 +487,7 @@
             fullSizeImage.src = dataUrl;
             fullSizeContainer.style.display = 'flex';
 
-            fullSizeImage.onclick = function() {
+            fullSizeImage.onclick = function () {
                 fullSizeContainer.style.display = 'none';
             };
         }
