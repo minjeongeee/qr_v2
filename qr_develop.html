@@ -96,7 +96,7 @@
             bottom: 20px;
             left: 20px;
             width: 60px;
-            height: 60px;
+            height: 75px;
             z-index: 2;
         }
         #hands, #hand_rotation {
@@ -131,7 +131,6 @@
         <img id="ansiety" class="overlay-image" src="ansiety.png" alt="ansiety Overlay">
         <img id="ennui" class="overlay-image" src="ennui.png" alt="ennui Overlay">
         <img id="ambarrassment" class="overlay-image" src="ambarrassment.png" alt="ambarrassment Overlay">
-        <!-- Add other overlay images here -->
     </div>
 
     <button id="capture-button"></button>
@@ -197,14 +196,14 @@
             newImage.className = 'draggable';
 
             newImage.onload = function () {
-                const aspectRatio = newImage.naturalWidth / newImage.naturalHeight; // Image aspect ratio
-                const initialWidth = 100; // Initial width
-                const initialHeight = initialWidth / aspectRatio; // Height based on aspect ratio
+                const aspectRatio = newImage.naturalWidth / newImage.naturalHeight; // 이미지의 원본 비율
+                const initialWidth = 100; // 원하는 초기 너비 (100px)
+                const initialHeight = initialWidth / aspectRatio; // 원본 비율에 따른 높이 계산
 
                 newImage.style.width = initialWidth + 'px';
                 newImage.style.height = initialHeight + 'px';
 
-                // Position in center
+                // 화면 중앙에 위치시키기
                 const x = (window.innerWidth - initialWidth) / 2;
                 const y = (window.innerHeight - initialHeight) / 2;
                 newImage.style.left = `${x}px`;
@@ -212,9 +211,9 @@
 
                 document.body.appendChild(newImage);
                 initDraggable(newImage);
-
+        
                 const hands = document.getElementById('hands');
-                if (!hands.classList.contains('used')) {
+                if (!hands.classList.contains('used')) { // Only show if it hasn't been used
                     hands.style.display = 'block';
                 }
             };
@@ -224,7 +223,7 @@
             let posX = 0, posY = 0, initialRotation = 0;
             const hands = document.getElementById('hands');
             const handRotation = document.getElementById('hand_rotation');
-            let firstDrag = true;
+            let firstDrag = true; // Track first drag
 
             element.addEventListener('touchstart', function(e) {
                 if (e.touches.length === 1) {
@@ -232,13 +231,14 @@
                     posX = touch.clientX;
                     posY = touch.clientY;
 
-                    element.style.zIndex = 11;
-                    if (firstDrag) {
+                    element.style.zIndex = 11; // Bring element to the front
+                    if (firstDrag) { // Hide hands.png on first drag and never show it again
                         hands.style.display = 'none';
-                        hands.classList.add('used');
-                        firstDrag = false;
+                        hands.classList.add('used'); // Mark hands.png as used
+                        firstDrag = false; // Prevent future showing
                     }
-                    handRotation.style.display = 'none';
+           
+                    handRotation.style.display = 'none'; // Hide hand_rotation.gif during drag
 
                     document.addEventListener('touchmove', onTouchMove);
                     document.addEventListener('touchend', onTouchEnd);
@@ -269,111 +269,154 @@
             }
         }
 
+
+
         function pinchToZoomAndRotate(element, e) {
             e.preventDefault();
 
             const handRotation = document.getElementById('hand_rotation');
-            handRotation.style.display = 'block';
+            handRotation.style.display = 'block'; // Show hand_rotation.gif during pinch/zoom/rotate
 
-            const touch1 = e.touches[0];
-            const touch2 = e.touches[1];
+            let initialDistance = null;
+            let initialWidth = element.clientWidth;
+            let initialHeight = element.clientHeight;
+            let initialAngle = 0;
 
-            const dist = getDistance(touch1, touch2);
-            const angle = getAngle(touch1, touch2);
-
-            let initialDist = dist;
-            let initialAngle = angle;
-            let scale = 1;
-            let rotation = 0;
-
-            function onTouchMove(e) {
-                const touch1 = e.touches[0];
-                const touch2 = e.touches[1];
-
-                const dist = getDistance(touch1, touch2);
-                const angle = getAngle(touch1, touch2);
-
-                scale = dist / initialDist;
-                rotation = angle - initialAngle;
-
-                element.style.transform = `scale(${scale}) rotate(${rotation}deg)`;
+            function calculateDistance(e) {
+                const distX = e.touches[0].clientX - e.touches[1].clientX;
+                const distY = e.touches[0].clientY - e.touches[1].clientY;
+                return Math.sqrt(distX * distX + distY * distY);
             }
 
-            function onTouchEnd() {
-                document.removeEventListener('touchmove', onTouchMove);
-                document.removeEventListener('touchend', onTouchEnd);
-                handRotation.style.display = 'none';
+            function calculateAngle(e) {
+                const angle = Math.atan2(
+                    e.touches[1].clientY - e.touches[0].clientY,
+                    e.touches[1].clientX - e.touches[0].clientX
+                );
+                return angle * (180 / Math.PI);
             }
 
-            document.addEventListener('touchmove', onTouchMove);
-            document.addEventListener('touchend', onTouchEnd);
+            if (initialDistance === null) {
+                initialDistance = calculateDistance(e);
+                initialAngle = calculateAngle(e);
+            } else {
+                const currentDistance = calculateDistance(e);
+                const currentAngle = calculateAngle(e);
+                const scale = currentDistance / initialDistance;
+                const rotation = currentAngle - initialAngle;
+
+                element.style.width = initialWidth * scale + 'px';
+                element.style.height = initialHeight * scale + 'px';
+                element.style.transform = `rotate(${rotation}deg)`;
+            }
+
+            function onPinchMove(e) {
+                if (e.touches.length === 2) {
+                    const currentDistance = calculateDistance(e);
+                    const currentAngle = calculateAngle(e);
+                    const scale = currentDistance / initialDistance;
+                    const rotation = currentAngle - initialAngle;
+
+                    element.style.width = initialWidth * scale + 'px';
+                    element.style.height = initialHeight * scale + 'px';
+                    element.style.transform = `rotate(${rotation}deg)`;
+                }
+            }
+
+            function onPinchEnd() {
+                document.removeEventListener('touchmove', onPinchMove);
+                document.removeEventListener('touchend', onPinchEnd);
+                handRotation.style.display = 'none'; // Hide hand_rotation.gif after pinch/zoom/rotate
+                initialDistance = null;
+            }
+
+            document.addEventListener('touchmove', onPinchMove);
+            document.addEventListener('touchend', onPinchEnd);
         }
 
-        function getDistance(touch1, touch2) {
-            const dx = touch2.clientX - touch1.clientX;
-            const dy = touch2.clientY - touch1.clientY;
-            return Math.sqrt(dx * dx + dy * dy);
-        }
-
-        function getAngle(touch1, touch2) {
-            const dx = touch2.clientX - touch1.clientX;
-            const dy = touch2.clientY - touch1.clientY;
-            return Math.atan2(dy, dx) * (180 / Math.PI);
-        }
-
-        function checkOverlap(item) {
+        function checkOverlap(element) {
             const sphere = document.getElementById('sphere');
             const sphereRect = sphere.getBoundingClientRect();
-            const itemRect = item.getBoundingClientRect();
+            const elementRect = element.getBoundingClientRect();
 
-            if (itemRect.left < sphereRect.right &&
-                itemRect.right > sphereRect.left &&
-                itemRect.top < sphereRect.bottom &&
-                itemRect.bottom > sphereRect.top) {
-                item.style.display = 'none';
+            if (elementRect.left < sphereRect.right &&
+                elementRect.right > sphereRect.left &&
+                elementRect.top < sphereRect.bottom &&
+                elementRect.bottom > sphereRect.top) {
+                sphere.style.opacity = 0.5;
+                element.remove();
+            } else {
+                sphere.style.opacity = 1;
             }
         }
 
-        document.getElementById('capture-button').addEventListener('click', function() {
-            capturePhoto();
-        });
+        document.getElementById('capture-button').addEventListener('click', captureScreenshot);
 
-        function capturePhoto() {
-            const canvas = document.getElementById('canvas');
-            const context = canvas.getContext('2d');
+        function captureScreenshot() {
             const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
 
+            // 캔버스 크기를 비디오의 실제 해상도로 설정
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-            const items = document.querySelectorAll('.draggable');
-            items.forEach(item => {
-                const itemRect = item.getBoundingClientRect();
-                const canvasRect = canvas.getBoundingClientRect();
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-                context.drawImage(
-                    item,
-                    itemRect.left - canvasRect.left,
-                    itemRect.top - canvasRect.top,
-                    itemRect.width,
-                    itemRect.height
-                );
+            // 화면 비율 계산
+            const scaleX = canvas.width / window.innerWidth;
+            const scaleY = canvas.height / window.innerHeight;
+
+            document.querySelectorAll('.draggable').forEach((img) => {
+                // 화면의 실제 위치와 크기를 비디오의 실제 해상도에 맞춰 계산
+                const imgWidth = img.clientWidth * scaleX;
+                const imgHeight = img.clientHeight * scaleY;
+                const imgX = img.offsetLeft * scaleX;
+                const imgY = img.offsetTop * scaleY;
+                // 이미지 회전 값 가져오기
+                const transform = window.getComputedStyle(img).transform;
+                let angle = 0;
+
+                if (transform !== 'none') {
+                    const values = transform.split('(')[1].split(')')[0].split(',');
+                    const a = values[0];
+                    const b = values[1];
+                    angle = Math.round(Math.atan2(b, a) * (180 / Math.PI));
+                }
+
+                ctx.save();
+                ctx.translate(imgX + imgWidth / 2, imgY + imgHeight / 2); // 이미지의 중심으로 이동
+                ctx.rotate(angle * Math.PI / 180); // 회전 적용
+                ctx.drawImage(img, -imgWidth / 2, -imgHeight / 2, imgWidth, imgHeight); // 중심 기준으로 이미지 그림
+                ctx.restore();
             });
 
-            const imageUrl = canvas.toDataURL('image/png');
+            const dataUrl = canvas.toDataURL('image/png');
+            showPreview(dataUrl);
+        }
+
+        function showPreview(dataUrl) {
             const previewImage = document.getElementById('preview-image');
-            previewImage.src = imageUrl;
-            document.getElementById('preview-container').style.display = 'block';
+            const previewContainer = document.getElementById('preview-container');
 
-            previewImage.addEventListener('click', function() {
-                document.getElementById('fullsize-image-img').src = imageUrl;
-                document.getElementById('fullsize-image').style.display = 'flex';
-            });
+            previewImage.src = dataUrl;
+            previewContainer.style.display = 'block';
 
-            document.getElementById('fullsize-image').addEventListener('click', function() {
-                this.style.display = 'none';
-            });
+            previewImage.onclick = function() {
+                showFullSizeImage(dataUrl);
+            };
+        }
+
+        function showFullSizeImage(dataUrl) {
+            const fullSizeContainer = document.getElementById('fullsize-image');
+            const fullSizeImage = document.getElementById('fullsize-image-img');
+
+            fullSizeImage.src = dataUrl;
+            fullSizeContainer.style.display = 'flex';
+
+            fullSizeImage.onclick = function() {
+                fullSizeContainer.style.display = 'none';
+            };
         }
     </script>
 </body>
