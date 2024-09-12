@@ -134,6 +134,16 @@
         }
 
 
+        #click-image {
+            position: fixed;
+            left: 50%;
+            top: 100px;
+            transform: translateX(-50%); /* Center the image horizontally */
+            width: 70px; /* Adjust width as needed */
+            height: 70px; /* Adjust height as needed */
+            z-index: 13; /* Higher than swipe-image */
+        }
+
 
         @keyframes diagonalMove {
             0% {
@@ -178,6 +188,9 @@
     <img id="hands" src="hands.png" alt="Hands Animation">
     <img id="hand_rotation" src="hand_rotation.gif" alt="Hand Rotation Animation">
 
+    <img id="click-image" src="click.gif" alt="Click" style="display: none;">
+
+
     <div id="preview-container">
         <img id="preview-image" alt="Preview">
     </div>
@@ -210,9 +223,10 @@
 
         function initSwipeImage() {
             const swipeImage = document.getElementById('swipe-image');
+            const clickImage = document.getElementById('click-image'); // Add reference to click.gif
 
-            // iOS에서도 동작하도록 항상 이미지를 표시하도록 설정
-            swipeImage.style.display = 'block'; // 기본값을 항상 block으로 설정
+            // Show swipe.gif initially
+            swipeImage.style.display = 'block';
 
             if (navigator.permissions) {
                 navigator.permissions.query({ name: 'camera' }).then(result => {
@@ -223,12 +237,14 @@
             }
 
             document.getElementById('overlay-container').addEventListener('scroll', function () {
-                swipeImage.style.display = 'none';
+                swipeImage.style.display = 'none'; // Hide swipe.gif when the slider is scrolled
+                clickImage.style.display = 'block'; // Show click.gif when swipe.gif disappears
             });
 
             document.querySelectorAll('.overlay-image').forEach((img) => {
                 img.addEventListener('click', function (e) {
-                    swipeImage.style.display = 'none';
+                    swipeImage.style.display = 'none'; // Hide swipe.gif when an overlay image is clicked
+                    clickImage.style.display = 'none'; // Hide click.gif when an overlay image is clicked
                 });
             });
         }
@@ -406,7 +422,7 @@
             function onPinchEnd() {
                 document.removeEventListener('touchmove', onPinchMove);
                 document.removeEventListener('touchend', onPinchEnd);
-                handRotation.style.display = 'none'; 
+                handRotation.style.display = 'none';
                 initialDistance = null;
             }
 
