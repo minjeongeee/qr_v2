@@ -195,6 +195,15 @@
             startCamera();
             initItemEvents();
             initSwipeImage();
+
+            // swipe.gif 이미지를 미리 로드하고 실제로 화면에 추가하기
+            const img = new Image();
+            img.src = 'swipe.gif';
+            img.onload = function () {
+                console.log('Swipe GIF successfully loaded.');
+                document.body.appendChild(img); // 이미지가 로드되었을 때 화면에 추가합니다.
+                img.style.display = 'none'; // 초기에는 숨겨둡니다.
+            };
         };
 
 
@@ -202,14 +211,15 @@
         function initSwipeImage() {
             const swipeImage = document.getElementById('swipe-image');
 
+            // iOS에서도 동작하도록 항상 이미지를 표시하도록 설정
+            swipeImage.style.display = 'block'; // 기본값을 항상 block으로 설정
+
             if (navigator.permissions) {
                 navigator.permissions.query({ name: 'camera' }).then(result => {
                     if (result.state === 'granted') {
                         swipeImage.style.display = 'block';
                     }
                 });
-            } else {
-                swipeImage.style.display = 'block';
             }
 
             document.getElementById('overlay-container').addEventListener('scroll', function () {
@@ -222,6 +232,7 @@
                 });
             });
         }
+
 
 
 
