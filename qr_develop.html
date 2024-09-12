@@ -388,54 +388,33 @@
         function pinchToZoomAndRotate(element, e) {
             e.preventDefault();
 
-            const handRotation = document.getElementById('hand_rotation');
+            if (!isRotating) {
+                isRotating = true;
+                handRotation.style.display = 'block';
 
-            let initialDistance = null;
-            let initialWidth = element.clientWidth;
-            let initialHeight = element.clientHeight;
-            let initialAngle = 0;
+                let initialDistance = null;
+                let initialWidth = element.clientWidth;
+                let initialHeight = element.clientHeight;
+                let initialAngle = 0;
 
-            function calculateDistance(e) {
-                const distX = e.touches[0].clientX - e.touches[1].clientX;
-                const distY = e.touches[0].clientY - e.touches[1].clientY;
-                return Math.sqrt(distX * distX + distY * distY);
-            }
-
-            function calculateAngle(e) {
-                const angle = Math.atan2(
-                    e.touches[1].clientY - e.touches[0].clientY,
-                    e.touches[1].clientX - e.touches[0].clientX
-                );
-                return angle * (180 / Math.PI);
-            }
-
-            if (initialDistance === null) {
-                initialDistance = calculateDistance(e);
-                initialAngle = calculateAngle(e);
-            } else {
-                const currentDistance = calculateDistance(e);
-                const currentAngle = calculateAngle(e);
-                const scale = currentDistance / initialDistance;
-                const rotation = currentAngle - initialAngle;
-
-                element.style.width = initialWidth * scale + 'px';
-                element.style.height = initialHeight * scale + 'px';
-                element.style.transform = `rotate(${rotation}deg)`;
-
-                // Update hand_rotation.gif position
-                const elementRect = element.getBoundingClientRect();
-                handRotation.style.left = `${elementRect.right + 50}px`;
-                handRotation.style.top = `${elementRect.top}px`;
-
-                // Hide hand_rotation.gif after rotation
-                if (!rotatedOnce) {
-                    handRotation.style.display = 'none';
-                    rotatedOnce = true;
+                function calculateDistance(e) {
+                    const distX = e.touches[0].clientX - e.touches[1].clientX;
+                    const distY = e.touches[0].clientY - e.touches[1].clientY;
+                    return Math.sqrt(distX * distX + distY * distY);
                 }
-            }
 
-            function onPinchMove(e) {
-                if (e.touches.length === 2) {
+                function calculateAngle(e) {
+                    const angle = Math.atan2(
+                        e.touches[1].clientY - e.touches[0].clientY,
+                        e.touches[1].clientX - e.touches[0].clientX
+                    );
+                    return angle * (180 / Math.PI);
+                }
+
+                if (initialDistance === null) {
+                    initialDistance = calculateDistance(e);
+                    initialAngle = calculateAngle(e);
+                } else {
                     const currentDistance = calculateDistance(e);
                     const currentAngle = calculateAngle(e);
                     const scale = currentDistance / initialDistance;
@@ -445,22 +424,42 @@
                     element.style.height = initialHeight * scale + 'px';
                     element.style.transform = `rotate(${rotation}deg)`;
 
-                    // Update hand_rotation.gif position
-                    const elementRect = element.getBoundingClientRect();
-                    handRotation.style.left = `${elementRect.right + 25}px`;
-                    handRotation.style.top = `${elementRect.top}px`;
+                    const rect = element.getBoundingClientRect();
+                    handRotation.style.left = `${rect.right + 50}px`; // Position hand_rotation.gif to the right of the element
+                    handRotation.style.top = `${rect.top + rect.height / 2 - handRotation.clientHeight / 2}px`; // Center vertically
                 }
-            }
 
-            function onPinchEnd() {
-                document.removeEventListener('touchmove', onPinchMove);
-                document.removeEventListener('touchend', onPinchEnd);
-                initialDistance = null;
-            }
+                function onPinchMove(e) {
+                    if (e.touches.length === 2) {
+                        const currentDistance = calculateDistance(e);
+                        const currentAngle = calculateAngle(e);
+                        const scale = currentDistance / initialDistance;
+                        const rotation = currentAngle - initialAngle;
 
-            document.addEventListener('touchmove', onPinchMove);
-            document.addEventListener('touchend', onPinchEnd);
+                        element.style.width = initialWidth * scale + 'px';
+                        element.style.height = initialHeight * scale + 'px';
+                        element.style.transform = `rotate(${rotation}deg)`;
+
+                        // Update hand_rotation.gif position
+                        const rect = element.getBoundingClientRect();
+                        handRotation.style.left = `${rect.right + 50}px`;
+                        handRotation.style.top = `${rect.top + rect.height / 2 - handRotation.clientHeight / 2}px`;
+                    }
+                }
+
+                function onPinchEnd() {
+                    document.removeEventListener('touchmove', onPinchMove);
+                    document.removeEventListener('touchend', onPinchEnd);
+                    handRotation.style.display = 'none';
+                    isRotating = false; // Rotation has ended
+                    initialDistance = null;
+                }
+
+                document.addEventListener('touchmove', onPinchMove);
+                document.addEventListener('touchend', onPinchEnd);
+            }
         }
+
 
         function checkOverlap(element) {
             const sphere = document.getElementById('sphere');
@@ -477,6 +476,7 @@
                 sphere.style.opacity = 1;
             }
         }
+
 
         document.getElementById('capture-button').addEventListener('click', captureScreenshot);
 
