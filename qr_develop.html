@@ -10,7 +10,6 @@
             padding: 0;
             overflow: hidden;
         }
-
         #video {
             position: fixed;
             top: 0;
@@ -20,7 +19,6 @@
             object-fit: cover;
             z-index: 1;
         }
-
         #capture-button {
             position: fixed;
             bottom: 20px;
@@ -34,7 +32,6 @@
             border: none;
             cursor: pointer;
         }
-
         #overlay-container {
             position: fixed;
             top: 0;
@@ -48,7 +45,6 @@
             z-index: 2;
             padding: 10px 0;
         }
-
         .overlay-image {
             display: inline-block;
             margin: 0 20px;
@@ -57,14 +53,12 @@
             height: 50px;
             width: auto;
         }
-
         .draggable {
             position: absolute;
             touch-action: none;
             z-index: 10;
             transform-origin: center center;
         }
-
         #preview-container {
             position: fixed;
             bottom: 20px;
@@ -74,14 +68,12 @@
             height: 100px;
             display: none;
         }
-
         #preview-image {
             width: 100%;
             height: 100%;
             object-fit: cover;
             cursor: pointer;
         }
-
         #fullsize-image {
             position: fixed;
             top: 0;
@@ -94,13 +86,11 @@
             align-items: center;
             z-index: 9999;
         }
-
             #fullsize-image img {
                 max-width: 90%;
                 max-height: 90%;
                 cursor: pointer;
             }
-
         #sphere {
             position: fixed;
             bottom: 20px;
@@ -109,7 +99,6 @@
             height: 75px;
             z-index: 2;
         }
-
         #hand_rotation {
             position: fixed;
             width: 120px;
@@ -118,7 +107,6 @@
             pointer-events: none;
             display: none; /* Initially hidden */
         }
-
         #hands {
             position: fixed;
             left: 72%;
@@ -130,7 +118,6 @@
             pointer-events: none;
             display: none; /* Initially hidden */
         }
-
         #swipe-image {
             position: fixed;
             top: 50px;
@@ -140,8 +127,6 @@
             z-index: 12; /* 카메라 위에 표시되도록 z-index를 높게 설정 */
             display: none; /* 항상 보이도록 기본값을 block으로 설정 */
         }
-
-
         #click-image {
             position: fixed;
             left: 50%;
@@ -151,18 +136,15 @@
             height: 120px; /* Adjust height as needed */
             z-index: 13; /* Higher than swipe-image */
         }
-
         @keyframes diagonalMove {
             0% {
                 top: 60%;
                 left: 70%;
             }
-
             50% {
                 top: 30%;
                 left: 70%;
             }
-
             100% {
                 top: 60%;
                 left: 70%;
@@ -171,9 +153,7 @@
     </style>
 </head>
 <body>
-
     <video id="video" autoplay playsinline></video>
-
     <div id="overlay-container">
         <img id="joy" class="overlay-image" src="joy.png" alt="joy Overlay">
         <img id="sad" class="overlay-image" src="sad.png" alt="sad Overlay">
@@ -185,38 +165,25 @@
         <img id="ennui" class="overlay-image" src="ennui.png" alt="ennui Overlay">
         <img id="ambarrassment" class="overlay-image" src="ambarrassment.png" alt="ambarrassment Overlay">
     </div>
-
     <button id="capture-button"></button>
-
     <img id="sphere" src="sphere.png" alt="Sphere">
-
     <img id="swipe-image" src="swipe.gif" alt="Swipe">
-
     <img id="hands" src="hands.gif" alt="Hands Animation">
-
     <img id="hand_rotation" src="hand_rotation.gif" alt="Hand Rotation Animation">
-
     <img id="click-image" src="click.gif" alt="Click" style="display: none;">
-
-
     <div id="preview-container">
         <img id="preview-image" alt="Preview">
     </div>
-
     <div id="fullsize-image">
         <img id="fullsize-image-img" alt="Full Size">
     </div>
-
     <canvas id="canvas" style="display: none;"></canvas>
-
     <script>
         let currentStream = null;
-
         window.onload = function () {
             startCamera();
             initItemEvents();
             initSwipeImage();
-
             // swipe.gif 이미지를 미리 로드하고 실제로 화면에 추가하기
             const img = new Image();
             img.src = 'swipe.gif';
@@ -226,16 +193,11 @@
                 img.style.display = 'none'; // 초기에는 숨겨둡니다.
             };
         };
-
-
-
         function initSwipeImage() {
             const swipeImage = document.getElementById('swipe-image');
             const clickImage = document.getElementById('click-image');
             let clickShown = false; // Flag to track if click.gif has been shown
-
             swipeImage.style.display = 'block';
-
             if (navigator.permissions) {
                 navigator.permissions.query({ name: 'camera' }).then(result => {
                     if (result.state === 'granted') {
@@ -243,16 +205,13 @@
                     }
                 });
             }
-
             document.getElementById('overlay-container').addEventListener('scroll', function () {
                 swipeImage.style.display = 'none';
-
                 if (!clickShown) { // Check if click.gif has been shown
                     clickImage.style.display = 'block';
                     clickShown = true; // Set the flag to true after showing
                 }
             });
-
             document.querySelectorAll('.overlay-image').forEach((img) => {
                 img.addEventListener('click', function (e) {
                     swipeImage.style.display = 'none';
@@ -260,12 +219,6 @@
                 });
             });
         }
-
-
-
-
-
-
         function startCamera() {
             const constraints = {
                 video: {
@@ -274,7 +227,6 @@
                     height: { ideal: 1080 }
                 }
             };
-
             navigator.mediaDevices.getUserMedia(constraints)
                 .then(function (stream) {
                     currentStream = stream;
@@ -289,7 +241,6 @@
                     alert("Could not access the camera. Please check your permissions.");
                 });
         }
-
         function initItemEvents() {
             document.querySelectorAll('.overlay-image').forEach((img) => {
                 img.addEventListener('click', function (e) {
@@ -297,97 +248,97 @@
                 });
             });
         }
-
         function createCentralItem(src) {
             const newImage = document.createElement('img');
             newImage.src = src;
             newImage.className = 'draggable';
-
             newImage.onload = function () {
                 const aspectRatio = newImage.naturalWidth / newImage.naturalHeight; // 이미지의 원본 비율
                 const initialWidth = 100; // 원하는 초기 너비 (100px)
                 const initialHeight = initialWidth / aspectRatio; // 원본 비율에 따른 높이 계산
-
                 newImage.style.width = initialWidth + 'px';
                 newImage.style.height = initialHeight + 'px';
-
                 // 화면 중앙에 위치시키기
                 const x = (window.innerWidth - initialWidth) / 2;
                 const y = (window.innerHeight - initialHeight) / 2;
                 newImage.style.left = `${x}px`;
                 newImage.style.top = `${y}px`;
-
                 document.body.appendChild(newImage);
                 initDraggable(newImage);
-
                 const hands = document.getElementById('hands');
                 if (!hands.classList.contains('used')) { // Only show if it hasn't been used
                     hands.style.display = 'block';
                 }
             };
         }
-
         function initDraggable(element) {
             let posX = 0, posY = 0, initialRotation = 0;
             const hands = document.getElementById('hands');
             const handRotation = document.getElementById('hand_rotation');
             let firstDrag = true; // Track first drag
             let rotatedOnce = false; // Track if rotation has occurred
-
             element.addEventListener('touchstart', function (e) {
                 if (e.touches.length === 1) {
                     const touch = e.touches[0];
                     posX = touch.clientX;
                     posY = touch.clientY;
-
                     element.style.zIndex = 11; // Bring element to the front
                     if (firstDrag) { // Hide hands.gif on first drag and never show it again
                         hands.style.display = 'none';
                         hands.classList.add('used'); // Mark hands.gif as used
                         firstDrag = false; // Prevent future showing
-
                         // Show hand_rotation.gif
                         const elementRect = element.getBoundingClientRect();
                         handRotation.style.left = `${elementRect.right + 50}px`;
                         handRotation.style.top = `${elementRect.top}px`;
                         handRotation.style.display = 'block'; // Show hand_rotation.gif
                     }
-
                     document.addEventListener('touchmove', onTouchMove);
                     document.addEventListener('touchend', onTouchEnd);
                 } else if (e.touches.length === 2) {
                     pinchToZoomAndRotate(element, e);
                 }
             });
-
             function onTouchMove(e) {
                 if (e.touches.length === 1) {
                     const touch = e.touches[0];
                     const dx = touch.clientX - posX;
                     const dy = touch.clientY - posY;
-
                     posX = touch.clientX;
                     posY = touch.clientY;
-
                     element.style.left = (element.offsetLeft + dx) + 'px';
                     element.style.top = (element.offsetTop + dy) + 'px';
-
                     checkOverlap(element);
                 }
             }
-
             function onTouchEnd() {
                 document.removeEventListener('touchmove', onTouchMove);
                 document.removeEventListener('touchend', onTouchEnd);
             }
         }
-
-
-
-
         function pinchToZoomAndRotate(element, e) {
             e.preventDefault();
 
+            const handRotation = document.getElementById('hand_rotation');
+
+            let initialDistance = null;
+            let initialWidth = element.clientWidth;
+            let initialHeight = element.clientHeight;
+            let initialAngle = 0;
+
+            function calculateDistance(e) {
+                const distX = e.touches[0].clientX - e.touches[1].clientX;
+                const distY = e.touches[0].clientY - e.touches[1].clientY;
+                return Math.sqrt(distX * distX + distY * distY);
+            }
+
+            function calculateAngle(e) {
+                const angle = Math.atan2(
+                    e.touches[1].clientY - e.touches[0].clientY,
+                    e.touches[1].clientX - e.touches[0].clientX
+                );
+                return angle * (180 / Math.PI);
+            }
             if (!isRotating) {
                 isRotating = true;
                 handRotation.style.display = 'block';
@@ -403,6 +354,28 @@
                     return Math.sqrt(distX * distX + distY * distY);
                 }
 
+            if (initialDistance === null) {
+                initialDistance = calculateDistance(e);
+                initialAngle = calculateAngle(e);
+            } else {
+                const currentDistance = calculateDistance(e);
+                const currentAngle = calculateAngle(e);
+                const scale = currentDistance / initialDistance;
+                const rotation = currentAngle - initialAngle;
+
+                element.style.width = initialWidth * scale + 'px';
+                element.style.height = initialHeight * scale + 'px';
+                element.style.transform = `rotate(${rotation}deg)`;
+
+                // Update hand_rotation.gif position
+                const elementRect = element.getBoundingClientRect();
+                handRotation.style.left = `${elementRect.right + 50}px`;
+                handRotation.style.top = `${elementRect.top}px`;
+
+                // Hide hand_rotation.gif after rotation
+                if (!rotatedOnce) {
+                    handRotation.style.display = 'none';
+                    rotatedOnce = true;
                 function calculateAngle(e) {
                     const angle = Math.atan2(
                         e.touches[1].clientY - e.touches[0].clientY,
@@ -410,7 +383,10 @@
                     );
                     return angle * (180 / Math.PI);
                 }
+            }
 
+            function onPinchMove(e) {
+                if (e.touches.length === 2) {
                 if (initialDistance === null) {
                     initialDistance = calculateDistance(e);
                     initialAngle = calculateAngle(e);
@@ -419,16 +395,25 @@
                     const currentAngle = calculateAngle(e);
                     const scale = currentDistance / initialDistance;
                     const rotation = currentAngle - initialAngle;
-
-                    element.style.width = (initialWidth * scale) + 'px';
-                    element.style.height = (initialHeight * scale) + 'px';
+                    element.style.width = initialWidth * scale + 'px';
+                    element.style.height = initialHeight * scale + 'px';
                     element.style.transform = `rotate(${rotation}deg)`;
 
+                    // Update hand_rotation.gif position
+                    const elementRect = element.getBoundingClientRect();
+                    handRotation.style.left = `${elementRect.right + 25}px`;
+                    handRotation.style.top = `${elementRect.top}px`;
                     const rect = element.getBoundingClientRect();
-                    handRotation.style.left = `${rect.right + 50}px`;
-                    handRotation.style.top = `${rect.top + rect.height / 2 - handRotation.clientHeight / 2}px`;
+                    handRotation.style.left = `${rect.right + 50}px`; // Position hand_rotation.gif to the right of the element
+                    handRotation.style.top = `${rect.top + rect.height / 2 - handRotation.clientHeight / 2}px`; // Center vertically
                 }
+            }
 
+            function onPinchEnd() {
+                document.removeEventListener('touchmove', onPinchMove);
+                document.removeEventListener('touchend', onPinchEnd);
+                initialDistance = null;
+            }
                 function onPinchMove(e) {
                     if (e.touches.length === 2) {
                         const currentDistance = calculateDistance(e);
@@ -436,10 +421,11 @@
                         const scale = currentDistance / initialDistance;
                         const rotation = currentAngle - initialAngle;
 
-                        element.style.width = (initialWidth * scale) + 'px';
-                        element.style.height = (initialHeight * scale) + 'px';
+                        element.style.width = initialWidth * scale + 'px';
+                        element.style.height = initialHeight * scale + 'px';
                         element.style.transform = `rotate(${rotation}deg)`;
 
+                        // Update hand_rotation.gif position
                         const rect = element.getBoundingClientRect();
                         handRotation.style.left = `${rect.right + 50}px`;
                         handRotation.style.top = `${rect.top + rect.height / 2 - handRotation.clientHeight / 2}px`;
@@ -450,22 +436,22 @@
                     document.removeEventListener('touchmove', onPinchMove);
                     document.removeEventListener('touchend', onPinchEnd);
                     handRotation.style.display = 'none';
-                    isRotating = false;
+                    isRotating = false; // Rotation has ended
                     initialDistance = null;
                 }
 
+            document.addEventListener('touchmove', onPinchMove);
+            document.addEventListener('touchend', onPinchEnd);
                 document.addEventListener('touchmove', onPinchMove);
                 document.addEventListener('touchend', onPinchEnd);
             }
         }
 
 
-
         function checkOverlap(element) {
             const sphere = document.getElementById('sphere');
             const sphereRect = sphere.getBoundingClientRect();
             const elementRect = element.getBoundingClientRect();
-
             if (elementRect.left < sphereRect.right &&
                 elementRect.right > sphereRect.left &&
                 elementRect.top < sphereRect.bottom &&
@@ -484,17 +470,13 @@
             const video = document.getElementById('video');
             const canvas = document.getElementById('canvas');
             const ctx = canvas.getContext('2d');
-
             // 캔버스 크기를 비디오의 실제 해상도로 설정
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
-
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
             // 화면 비율 계산
             const scaleX = canvas.width / window.innerWidth;
             const scaleY = canvas.height / window.innerHeight;
-
             document.querySelectorAll('.draggable').forEach((img) => {
                 // 화면의 실제 위치와 크기를 비디오의 실제 해상도에 맞춰 계산
                 const imgWidth = img.clientWidth * scaleX;
@@ -504,44 +486,35 @@
                 // 이미지 회전 값 가져오기
                 const transform = window.getComputedStyle(img).transform;
                 let angle = 0;
-
                 if (transform !== 'none') {
                     const values = transform.split('(')[1].split(')')[0].split(',');
                     const a = values[0];
                     const b = values[1];
                     angle = Math.round(Math.atan2(b, a) * (180 / Math.PI));
                 }
-
                 ctx.save();
                 ctx.translate(imgX + imgWidth / 2, imgY + imgHeight / 2); // 이미지의 중심으로 이동
                 ctx.rotate(angle * Math.PI / 180); // 회전 적용
                 ctx.drawImage(img, -imgWidth / 2, -imgHeight / 2, imgWidth, imgHeight); // 중심 기준으로 이미지 그림
                 ctx.restore();
             });
-
             const dataUrl = canvas.toDataURL('image/png');
             showPreview(dataUrl);
         }
-
         function showPreview(dataUrl) {
             const previewImage = document.getElementById('preview-image');
             const previewContainer = document.getElementById('preview-container');
-
             previewImage.src = dataUrl;
             previewContainer.style.display = 'block';
-
             previewImage.onclick = function () {
                 showFullSizeImage(dataUrl);
             };
         }
-
         function showFullSizeImage(dataUrl) {
             const fullSizeContainer = document.getElementById('fullsize-image');
             const fullSizeImage = document.getElementById('fullsize-image-img');
-
             fullSizeImage.src = dataUrl;
             fullSizeContainer.style.display = 'flex';
-
             fullSizeImage.onclick = function () {
                 fullSizeContainer.style.display = 'none';
             };
